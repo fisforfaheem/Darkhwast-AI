@@ -1,0 +1,51 @@
+{
+  "docIntel": {
+    "documentType": "TAX_NOTICE",
+    "authority": "FBR",
+    "consumerRef": "NTN-7654321",
+    "amounts": [
+      {
+        "label": "Tax Demand",
+        "amount": 125000,
+        "currency": "PKR"
+      }
+    ],
+    "dates": [
+      {
+        "label": "Notice Date",
+        "date": "2026-05-12"
+      }
+    ],
+    "deadlines": [
+      {
+        "label": "Response Deadline",
+        "date": "2026-05-19",
+        "daysRemaining": 4,
+        "isHidden": true
+      }
+    ],
+    "keyFacts": [
+      "FBR Income Tax Notice detected",
+      "Section 122 Assessment",
+      "Deadline buried in footnote"
+    ]
+  },
+  "rightsAnalysis": {
+    "violationDetected": true,
+    "violationType": "Assessment_Error",
+    "legalBasis": "Income Tax Ordinance 2001, Section 122",
+    "maxAllowed": 50000,
+    "actualCharged": 125000,
+    "amountOwed": 75000,
+    "haqScore": 55,
+    "haqReasoning": "FBR ka assessment notice technical ghaltiyon par mabni hai. Aap ke pas 30 din ka waqt hota hai jawab dene ke liye.",
+    "confidenceLevel": "MEDIUM"
+  },
+  "complaintDraft": {
+    "urduDraft": "Bakhidmat Commissioner (Appeals), FBR.\n\nJanab,\n\nMujhe FBR ki janib se Section 122 ka notice mila hai. Is assessment mein meri aamdani ghalat calculate ki gayi hai. Main is demand ko challenge karta hoon.\n\nShukriya.",
+    "englishDraft": "To the Commissioner (Appeals), FBR.\n\nSubject: Response to Assessment Notice u/s 122.\n\nI am responding to the tax assessment notice (Ref: NTN-7654321). The income calculation in the assessment is incorrect. I request a stay on this demand and a personal hearing.\n\nRegards.",
+    "subject": "FBR Tax Notice Dispute",
+    "submissionAuthority": "FBR Facilitation Center",
+    "estimatedResponseDays": 7
+  }
+}

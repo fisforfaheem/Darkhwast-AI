@@ -1,0 +1,181 @@
+{
+  "trace_format": "antigravity_agent_v1",
+  "orchestration": {
+    "platform": "Google Antigravity",
+    "build_tool": "Antigravity autonomous agent sessions",
+    "runtime": "Flutter 3 + Riverpod StateNotifier",
+    "llm": "gemini-3.1-pro-preview",
+    "llm_mode": "live_gemini_1.5_pro",
+    "challenge": "AISeekho 2026 — Challenge 1: Autonomous Content-to-Action Agent",
+    "execution_mode": "sequential_handoff",
+    "agent_count": 5,
+    "interrupt_logic": "UrgencyDetectorAgent flags deadlines <= 4 days or ghost (hidden) dates"
+  },
+  "run_id": "run-sample-fbr-20260515",
+  "timestamp": "2026-05-15T15:10:00.000Z",
+  "started_at": "2026-05-15T15:09:52.000Z",
+  "completed_at": "2026-05-15T15:10:00.000Z",
+  "pipeline_duration_ms": 8000,
+  "input_document_type": "TAX_NOTICE",
+  "input_authority": "FBR",
+  "agents": [
+    {
+      "step": 1,
+      "agent": "DocumentIntelligenceAgent",
+      "role": "Extract structured data from OCR / document text",
+      "status": "complete",
+      "started_at": "2026-05-15T15:09:52.200Z",
+      "completed_at": "2026-05-15T15:09:53.600Z",
+      "duration_ms": 1400,
+      "tools_used": [
+        "Google ML Kit OCR",
+        "Gemini 3.1 Pro Preview vision-language JSON"
+      ],
+      "reasoning": "Detected Tax Notice from FBR. Extracted 1 charge lines and 1 date signals. | Key facts: FBR Income Tax Notice detected; Section 122 Assessment; Deadline buried in footnote",
+      "decision": "Classified as TAX_NOTICE from FBR",
+      "facts": [
+        "FBR Income Tax Notice detected",
+        "Section 122 Assessment",
+        "Deadline buried in footnote"
+      ],
+      "output_summary": "DocumentEntity: type=TAX_NOTICE, authority=FBR, amounts=1, deadlines=1",
+      "output": {
+        "documentType": "TAX_NOTICE",
+        "authority": "FBR",
+        "consumerRef": "NTN-7654321",
+        "deadlines": [
+          {
+            "label": "Response Deadline",
+            "date": "2026-05-19",
+            "daysRemaining": 4,
+            "isHidden": true
+          }
+        ],
+        "keyFacts": [
+          "FBR Income Tax Notice detected",
+          "Section 122 Assessment",
+          "Deadline buried in footnote"
+        ]
+      }
+    },
+    {
+      "step": 2,
+      "agent": "UrgencyDetectorAgent",
+      "role": "Ghost Deadline Detector — scan footnotes and fine print",
+      "status": "complete",
+      "started_at": "2026-05-15T15:09:53.700Z",
+      "completed_at": "2026-05-15T15:09:54.500Z",
+      "duration_ms": 800,
+      "tools_used": [
+        "Rule engine on DocumentEntity.deadlines",
+        "Hidden-date heuristics"
+      ],
+      "reasoning": "⚠️ URGENT: Response Deadline — 4 din baaki! Ghost Deadline Detector: chhupi hui deadline fine print mein mili. | Key facts: Response Deadline: 4d (high)",
+      "decision": "GHOST_DEADLINE_ALERT",
+      "facts": [
+        "Response Deadline: 4d (high)"
+      ],
+      "output_summary": "DeadlineAlert: label=Response Deadline, daysRemaining=4, hidden=true, urgency=high",
+      "output": [
+        {
+          "label": "Response Deadline",
+          "date": "2026-05-19",
+          "daysRemaining": 4,
+          "isHidden": true,
+          "urgencyLevel": "high"
+        }
+      ]
+    },
+    {
+      "step": 3,
+      "agent": "RightsIntelligenceAgent",
+      "role": "Match charges to Pakistani consumer protection law; compute HAQ Score",
+      "status": "complete",
+      "started_at": "2026-05-15T15:09:54.600Z",
+      "completed_at": "2026-05-15T15:09:57.100Z",
+      "duration_ms": 2500,
+      "tools_used": [
+        "Firestore knowledgeBase",
+        "Gemini 3.1 Pro Preview legal reasoning"
+      ],
+      "reasoning": "HAQ Score: 55/100 — Assessment_Error. Legal basis: Income Tax Ordinance 2001, Section 122. Owed: Rs. 75000. | Key facts: HAQ Score: 55/100; Confidence: MEDIUM",
+      "decision": "VIOLATION_CONFIRMED_HAQ_55",
+      "facts": [
+        "HAQ Score: 55/100",
+        "Confidence: MEDIUM",
+        "FBR ka assessment notice technical ghaltiyon par mabni hai."
+      ],
+      "output_summary": "RightsAnalysis: haqScore=55, violation=Assessment_Error, owed=Rs.75000, basis=Income Tax Ordinance 2001, Section 122",
+      "output": {
+        "violationDetected": true,
+        "violationType": "Assessment_Error",
+        "legalBasis": "Income Tax Ordinance 2001, Section 122",
+        "maxAllowed": 50000,
+        "actualCharged": 125000,
+        "amountOwed": 75000,
+        "haqScore": 55,
+        "haqReasoning": "FBR ka assessment notice technical ghaltiyon par mabni hai. Aap ke pas 30 din ka waqt hota hai jawab dene ke liye.",
+        "confidenceLevel": "MEDIUM"
+      }
+    },
+    {
+      "step": 4,
+      "agent": "ActionDrafterAgent",
+      "role": "Generate bilingual formal complaint for submission",
+      "status": "complete",
+      "started_at": "2026-05-15T15:09:57.200Z",
+      "completed_at": "2026-05-15T15:09:59.100Z",
+      "duration_ms": 1900,
+      "tools_used": [
+        "Gemini 3.1 Pro Preview drafting",
+        "Urdu + English letter templates"
+      ],
+      "reasoning": "Complaint drafted for FBR Facilitation Center — Urdu + English, portal: fbr.gov.pk.",
+      "decision": "COMPLAINT_DRAFT_READY",
+      "facts": [
+        "Subject: FBR Tax Notice Dispute",
+        "Estimated response: 7 working days"
+      ],
+      "output_summary": "ComplaintDraft: authority=FBR Facilitation Center, portal=fbr.gov.pk, responseDays=7",
+      "output": {
+        "subject": "FBR Tax Notice Dispute",
+        "submissionAuthority": "FBR Facilitation Center",
+        "estimatedResponseDays": 7
+      }
+    },
+    {
+      "step": 5,
+      "agent": "CollectivePatternAgent",
+      "role": "Cluster similar complaints for collective petitions",
+      "status": "complete",
+      "started_at": "2026-05-15T15:09:59.200Z",
+      "completed_at": "2026-05-15T15:09:59.700Z",
+      "duration_ms": 500,
+      "tools_used": [
+        "Firestore collectiveCases query",
+        "Violation pattern matching"
+      ],
+      "reasoning": "Individual case — collective action nahi mila",
+      "decision": "INDIVIDUAL_FILING",
+      "facts": [
+        "No cluster for this document type"
+      ],
+      "output_summary": "No collective cluster — individual filing recommended.",
+      "output": null
+    }
+  ],
+  "final_outcome": {
+    "haq_score": 55,
+    "amount_owed": 75000,
+    "violation_type": "Assessment_Error",
+    "legal_basis": "Income Tax Ordinance 2001, Section 122",
+    "confidence": "MEDIUM",
+    "complaint_filed": true,
+    "case_reference": "DW-2026-FBR-1182",
+    "collective_action_joined": false,
+    "urgent_deadline_detected": true,
+    "ghost_deadline_detected": true,
+    "recommended_action": "FILE_COMPLAINT",
+    "content_to_action_complete": true
+  }
+}

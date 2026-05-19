@@ -1,0 +1,44 @@
+{
+  "trace_format": "antigravity_agent_v1",
+  "agent": "DocumentIntelligenceAgent",
+  "step": 1,
+  "status": "complete",
+  "reasoning": "Antigravity delegated OCR + Gemini classification. Matched IESCO header pattern and FCA line item in Urdu/English mixed bill text.",
+  "decision": "Classified as ELECTRICITY_BILL from IESCO",
+  "output": {
+    "documentType": "ELECTRICITY_BILL",
+    "authority": "IESCO",
+    "consumerRef": "13 14115 0123456 U",
+    "amounts": [
+      {
+        "label": "Total Bill",
+        "amount": 18500,
+        "currency": "PKR"
+      },
+      {
+        "label": "FCA Charges",
+        "amount": 3800,
+        "currency": "PKR"
+      }
+    ],
+    "dates": [
+      {
+        "label": "Due Date",
+        "date": "2026-05-20"
+      }
+    ],
+    "deadlines": [
+      {
+        "label": "Payment Deadline",
+        "date": "2026-05-20",
+        "daysRemaining": 6,
+        "isHidden": false
+      }
+    ],
+    "keyFacts": [
+      "IESCO Electricity Bill detected",
+      "Consumption: 450 units (Slab B2)",
+      "Rs. 3,800 FCA charge extracted"
+    ]
+  }
+}

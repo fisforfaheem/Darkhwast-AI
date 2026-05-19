@@ -1,0 +1,43 @@
+{
+  "docIntel": {
+    "documentType": "OTHER",
+    "authority": "Government of Pakistan",
+    "consumerRef": "GP-2026-001",
+    "amounts": [
+      {"label": "Total Amount", "amount": 5000, "currency": "PKR"}
+    ],
+    "dates": [
+      {"label": "Issue Date", "date": "2026-05-01"},
+      {"label": "Due Date", "date": "2026-06-01"}
+    ],
+    "deadlines": [],
+    "keyFacts": [
+      "Government document issued by relevant authority",
+      "Contains financial information requiring review",
+      "Standard processing timeline applies",
+      "Citizen has right to challenge or request clarification"
+    ],
+    "rawAmountsBilled": {"total": 5000, "breakdown": {}}
+  },
+  "rightsAnalysis": {
+    "violationDetected": false,
+    "violationType": "General Review",
+    "legalBasis": "Pakistan Citizens Portal Framework",
+    "maxAllowed": 5000,
+    "actualCharged": 5000,
+    "amountOwed": 0,
+    "haqScore": 50,
+    "haqReasoning": "Document mein koi waazeh violation nahi mili, lekin aap ki request ke mutabiq AI ne analysis ki hai.",
+    "precedents": "Standard government document — citizen can request clarification or correction through proper channels.",
+    "confidenceLevel": "MEDIUM"
+  },
+  "complaintDraft": {
+    "urduDraft": "بسم اللہ الرحمن الرحیم\n\nمحترم صاحب/صاحبہ،\n\nاس خط کے ذریعے میں اپنے دستاویز کے بارے میں وضاحت اور رہنمائی کی درخواست کر رہا/رہی ہوں۔ مذکورہ دستاویز میں درج معلومات کی تصدیق اور وضاحت درکار ہے۔\n\nآپ سے گزارش ہے کہ اس معاملے پر توجہ دیں اور مناسب کارروائی فرمائیں۔\n\nشکریہ",
+    "englishDraft": "Dear Sir/Madam,\n\nI am writing to request clarification and guidance regarding my document. The information contained in the referenced document requires verification and explanation.\n\nI request your kind attention to this matter and appropriate action.\n\nThank you.",
+    "subject": "Request for Document Clarification",
+    "submissionAuthority": "Relevant Government Authority",
+    "submissionPortal": "citizens.portal.gov.pk (mock)",
+    "estimatedResponseDays": 14,
+    "actionSummary": "General document review and clarification request"
+  }
+}

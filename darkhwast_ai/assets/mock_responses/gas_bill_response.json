@@ -1,0 +1,37 @@
+{
+  "docIntel": {
+    "documentType": "GAS_BILL",
+    "authority": "SNGPL",
+    "consumerRef": "9876543210",
+    "amounts": [
+      {"label": "Current Bill", "amount": 4200, "currency": "PKR"}
+    ],
+    "dates": [
+      {"label": "Reading Date", "date": "2026-05-10"}
+    ],
+    "deadlines": [],
+    "keyFacts": [
+      "SNGPL Gas Bill detected",
+      "Meter reading mismatch detected",
+      "Consumption higher than seasonal average"
+    ]
+  },
+  "rightsAnalysis": {
+    "violationDetected": true,
+    "violationType": "Meter_Reading_Error",
+    "legalBasis": "OGRA Consumer Protection Regulations 2018, Section 12(a)",
+    "maxAllowed": 3800,
+    "actualCharged": 4200,
+    "amountOwed": 400,
+    "haqScore": 65,
+    "haqReasoning": "Aap ke meter ki reading mein ghalti maloom hoti hai. OGRA rules ke mutabiq aap re-check ki darkhwast de sakte hain.",
+    "confidenceLevel": "MEDIUM"
+  },
+  "complaintDraft": {
+    "urduDraft": "Bakhidmat SNGPL Complaint Cell.\n\nJanab,\n\nMere gas ke bill mein meter reading ghalat darj ki gayi hai. Asal reading bill par di gayi reading se kam hai. Baraye meherbani is ki tasdeeq karain aur bill darust karain.\n\nShukriya.",
+    "englishDraft": "To SNGPL Complaint Cell.\n\nSubject: Meter Reading Error.\n\nMy gas bill shows a higher meter reading than the actual physical reading on the meter. Please verify and correct the bill as per OGRA guidelines.\n\nRegards.",
+    "subject": "SNGPL Meter Reading Dispute",
+    "submissionAuthority": "OGRA / SNGPL Cell",
+    "estimatedResponseDays": 21
+  }
+}

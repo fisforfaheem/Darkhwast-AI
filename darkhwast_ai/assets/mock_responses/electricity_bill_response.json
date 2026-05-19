@@ -1,0 +1,40 @@
+{
+  "docIntel": {
+    "documentType": "ELECTRICITY_BILL",
+    "authority": "IESCO",
+    "consumerRef": "13 14115 0123456 U",
+    "amounts": [
+      {"label": "Total Bill", "amount": 18500, "currency": "PKR"},
+      {"label": "FCA Charges", "amount": 3800, "currency": "PKR"}
+    ],
+    "dates": [
+      {"label": "Due Date", "date": "2026-05-20"}
+    ],
+    "deadlines": [
+      {"label": "Payment Deadline", "date": "2026-05-20", "daysRemaining": 6, "isHidden": false}
+    ],
+    "keyFacts": [
+      "IESCO Electricity Bill detected",
+      "Consumption: 450 units (Slab B2)",
+      "Rs. 3,800 FCA charge extracted"
+    ]
+  },
+  "rightsAnalysis": {
+    "violationDetected": true,
+    "violationType": "FCA_Overcharge",
+    "legalBasis": "NEPRA QTA Circular May 2025, Section 4(b)",
+    "maxAllowed": 2200,
+    "actualCharged": 3800,
+    "amountOwed": 1600,
+    "haqScore": 81,
+    "haqReasoning": "Aap se slab limit se zayada FCA charge kiya gaya hai. NEPRA rules ke mutabiq aap refund ke haqdar hain.",
+    "confidenceLevel": "HIGH"
+  },
+  "complaintDraft": {
+    "urduDraft": "Bakhidmat Janab Manager, IESCO Islamabad.\n\nMoazziz Janab,\n\nMain aap ki tawajjo apne bijli ke bill (Ref: 13 14115 0123456 U) ki taraf mabzoool karwana chahta hoon. Is mahine ke bill mein FCA ki mad mein Rs. 3,800 charge kiye gaye hain, jabke NEPRA ke slab B2 rules ke mutabiq yeh Rs. 2,200 se zayada nahi hone chahiye thay. Lehaza, Rs. 1,600 ka izafi charge khatam kiya jaye aur mujhe refund diya jaye.\n\nShukriya,\nPakistani Shehri",
+    "englishDraft": "To the Manager, IESCO Islamabad.\n\nSubject: Formal Complaint regarding FCA Overcharge.\n\nI am writing to formally contest the Fuel Cost Adjustment (FCA) charges on my electricity bill (Ref: 13 14115 0123456 U). As per NEPRA QTA Circular May 2025, Section 4(b), the maximum allowed FCA for Slab B2 is Rs. 2,200, whereas I have been charged Rs. 3,800. I request an immediate refund of Rs. 1,600.\n\nRegards,\nCitizen of Pakistan",
+    "subject": "FCA Overcharge Complaint - IESCO",
+    "submissionAuthority": "IESCO / Citizens Portal",
+    "estimatedResponseDays": 14
+  }
+}

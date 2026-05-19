@@ -1,0 +1,15 @@
+{
+  "trace_format": "antigravity_agent_v1",
+  "agent": "UrgencyDetectorAgent",
+  "step": 2,
+  "status": "complete",
+  "reasoning": "Ghost Deadline Detector scanned body text, stamps, and footnotes. No hidden statutory deadline; payment due in 6 days — below urgent threshold (4 days).",
+  "decision": "MONITOR_DEADLINE",
+  "output": {
+    "label": "Payment Deadline",
+    "date": "2026-05-20",
+    "daysRemaining": 6,
+    "isHidden": false,
+    "urgencyLevel": "low"
+  }
+}

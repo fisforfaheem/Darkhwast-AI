@@ -1,0 +1,17 @@
+{
+  "trace_format": "antigravity_agent_v1",
+  "agent": "CollectivePatternAgent",
+  "step": 5,
+  "status": "complete",
+  "reasoning": "Queried Firestore collectiveCases for authority=IESCO and violationType=FCA_Overcharge. Found active cluster in Islamabad with petition drafted.",
+  "decision": "COLLECTIVE_CLUSTER_29",
+  "output": {
+    "id": "cluster_IESCO_FCA_ISB_May2026",
+    "authority": "IESCO",
+    "violationType": "FCA_Overcharge",
+    "area": "Islamabad",
+    "count": 29,
+    "status": "Open",
+    "collectivePetitionDrafted": true
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "trace_format": "antigravity_agent_v1",
+  "agent": "ActionDrafterAgent",
+  "step": 4,
+  "status": "complete",
+  "reasoning": "Antigravity drafted formal Urdu (Nastaliq-compatible) and English letters citing NEPRA section and exact refund amount for Citizens Portal submission.",
+  "decision": "COMPLAINT_DRAFT_READY",
+  "output": {
+    "subject": "FCA Overcharge Complaint - IESCO",
+    "submissionAuthority": "IESCO / Citizens Portal",
+    "submissionPortal": "complaints.nepra.org.pk",
+    "estimatedResponseDays": 14
+  }
+}

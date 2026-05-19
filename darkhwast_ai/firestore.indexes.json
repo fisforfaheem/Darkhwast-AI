@@ -1,0 +1,29 @@
+{
+  "indexes": [
+    {
+      "collectionGroup": "cases",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "filedDate",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "collectiveCases",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "authority",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "violationType",
+          "order": "ASCENDING"
+        }
+      ]
+    }
+  ],
+  "fieldOverrides": []
+}

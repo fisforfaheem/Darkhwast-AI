@@ -1,0 +1,203 @@
+{
+  "trace_format": "antigravity_agent_v1",
+  "orchestration": {
+    "platform": "Google Antigravity",
+    "build_tool": "Antigravity autonomous agent sessions",
+    "runtime": "Flutter 3 + Riverpod StateNotifier",
+    "llm": "gemini-3.1-pro-preview",
+    "llm_mode": "live_gemini_1.5_pro",
+    "challenge": "AISeekho 2026 — Challenge 1: Autonomous Content-to-Action Agent",
+    "execution_mode": "sequential_handoff",
+    "agent_count": 5,
+    "interrupt_logic": "UrgencyDetectorAgent flags deadlines <= 4 days or ghost (hidden) dates"
+  },
+  "run_id": "run-sample-iesco-20260515",
+  "timestamp": "2026-05-15T14:30:00.000Z",
+  "started_at": "2026-05-15T14:29:52.000Z",
+  "completed_at": "2026-05-15T14:30:00.000Z",
+  "pipeline_duration_ms": 7800,
+  "input_document_type": "ELECTRICITY_BILL",
+  "input_authority": "IESCO",
+  "agents": [
+    {
+      "step": 1,
+      "agent": "DocumentIntelligenceAgent",
+      "role": "Extract structured data from OCR / document text",
+      "status": "complete",
+      "started_at": "2026-05-15T14:29:52.100Z",
+      "completed_at": "2026-05-15T14:29:53.400Z",
+      "duration_ms": 1300,
+      "tools_used": [
+        "Google ML Kit OCR",
+        "Gemini 3.1 Pro Preview vision-language JSON"
+      ],
+      "reasoning": "Detected Electricity Bill from IESCO. Extracted 2 charge lines and 1 date signals. | Key facts: IESCO Electricity Bill detected; Consumption: 450 units (Slab B2); Rs. 3,800 FCA charge extracted",
+      "decision": "Classified as ELECTRICITY_BILL from IESCO",
+      "facts": [
+        "IESCO Electricity Bill detected",
+        "Consumption: 450 units (Slab B2)",
+        "Rs. 3,800 FCA charge extracted"
+      ],
+      "output_summary": "DocumentEntity: type=ELECTRICITY_BILL, authority=IESCO, amounts=2, deadlines=1",
+      "output": {
+        "documentType": "ELECTRICITY_BILL",
+        "authority": "IESCO",
+        "consumerRef": "13 14115 0123456 U",
+        "amounts": [
+          {
+            "label": "Total Bill",
+            "amount": 18500,
+            "currency": "PKR"
+          },
+          {
+            "label": "FCA Charges",
+            "amount": 3800,
+            "currency": "PKR"
+          }
+        ],
+        "deadlines": [
+          {
+            "label": "Payment Deadline",
+            "date": "2026-05-20",
+            "daysRemaining": 6,
+            "isHidden": false
+          }
+        ],
+        "keyFacts": [
+          "IESCO Electricity Bill detected",
+          "Consumption: 450 units (Slab B2)",
+          "Rs. 3,800 FCA charge extracted"
+        ]
+      }
+    },
+    {
+      "step": 2,
+      "agent": "UrgencyDetectorAgent",
+      "role": "Ghost Deadline Detector — scan footnotes and fine print",
+      "status": "complete",
+      "started_at": "2026-05-15T14:29:53.500Z",
+      "completed_at": "2026-05-15T14:29:54.300Z",
+      "duration_ms": 800,
+      "tools_used": [
+        "Rule engine on DocumentEntity.deadlines",
+        "Hidden-date heuristics"
+      ],
+      "reasoning": "Next deadline: Payment Deadline in 6 days — not yet critical. | Key facts: Payment Deadline: 6d (low)",
+      "decision": "MONITOR_DEADLINE",
+      "facts": [
+        "Payment Deadline: 6d (low)"
+      ],
+      "output_summary": "DeadlineAlert: label=Payment Deadline, daysRemaining=6, hidden=false, urgency=low",
+      "output": [
+        {
+          "label": "Payment Deadline",
+          "date": "2026-05-20",
+          "daysRemaining": 6,
+          "isHidden": false,
+          "urgencyLevel": "low"
+        }
+      ]
+    },
+    {
+      "step": 3,
+      "agent": "RightsIntelligenceAgent",
+      "role": "Match charges to Pakistani consumer protection law; compute HAQ Score",
+      "status": "complete",
+      "started_at": "2026-05-15T14:29:54.400Z",
+      "completed_at": "2026-05-15T14:29:56.900Z",
+      "duration_ms": 2500,
+      "tools_used": [
+        "Firestore knowledgeBase",
+        "Gemini 3.1 Pro Preview legal reasoning"
+      ],
+      "reasoning": "HAQ Score: 81/100 — FCA_Overcharge. Legal basis: NEPRA QTA Circular May 2025, Section 4(b). Owed: Rs. 1600. | Key facts: HAQ Score: 81/100; Confidence: HIGH; Aap se slab limit se zayada FCA charge kiya gaya hai.",
+      "decision": "VIOLATION_CONFIRMED_HAQ_81",
+      "facts": [
+        "HAQ Score: 81/100",
+        "Confidence: HIGH",
+        "Aap se slab limit se zayada FCA charge kiya gaya hai. NEPRA rules ke mutabiq aap refund ke haqdar hain."
+      ],
+      "output_summary": "RightsAnalysis: haqScore=81, violation=FCA_Overcharge, owed=Rs.1600, basis=NEPRA QTA Circular May 2025, Section 4(b)",
+      "output": {
+        "violationDetected": true,
+        "violationType": "FCA_Overcharge",
+        "legalBasis": "NEPRA QTA Circular May 2025, Section 4(b)",
+        "maxAllowed": 2200,
+        "actualCharged": 3800,
+        "amountOwed": 1600,
+        "haqScore": 81,
+        "haqReasoning": "Aap se slab limit se zayada FCA charge kiya gaya hai. NEPRA rules ke mutabiq aap refund ke haqdar hain.",
+        "confidenceLevel": "HIGH"
+      }
+    },
+    {
+      "step": 4,
+      "agent": "ActionDrafterAgent",
+      "role": "Generate bilingual formal complaint for submission",
+      "status": "complete",
+      "started_at": "2026-05-15T14:29:57.000Z",
+      "completed_at": "2026-05-15T14:29:58.900Z",
+      "duration_ms": 1900,
+      "tools_used": [
+        "Gemini 3.1 Pro Preview drafting",
+        "Urdu + English letter templates"
+      ],
+      "reasoning": "Complaint drafted for IESCO / Citizens Portal — Urdu + English, portal: complaints.nepra.org.pk. | Key facts: Subject: FCA Overcharge Complaint - IESCO; Estimated response: 14 working days",
+      "decision": "COMPLAINT_DRAFT_READY",
+      "facts": [
+        "Subject: FCA Overcharge Complaint - IESCO",
+        "Estimated response: 14 working days"
+      ],
+      "output_summary": "ComplaintDraft: authority=IESCO / Citizens Portal, portal=complaints.nepra.org.pk, responseDays=14",
+      "output": {
+        "subject": "FCA Overcharge Complaint - IESCO",
+        "submissionAuthority": "IESCO / Citizens Portal",
+        "submissionPortal": "complaints.nepra.org.pk",
+        "estimatedResponseDays": 14
+      }
+    },
+    {
+      "step": 5,
+      "agent": "CollectivePatternAgent",
+      "role": "Cluster similar complaints for collective petitions",
+      "status": "complete",
+      "started_at": "2026-05-15T14:29:59.000Z",
+      "completed_at": "2026-05-15T14:29:59.500Z",
+      "duration_ms": 500,
+      "tools_used": [
+        "Firestore collectiveCases query",
+        "Violation pattern matching"
+      ],
+      "reasoning": "29 similar cases mile — Collective action mumkin | Key facts: Cluster: 29 cases in Islamabad; Violation pattern: FCA_Overcharge",
+      "decision": "COLLECTIVE_CLUSTER_29",
+      "facts": [
+        "Cluster: 29 cases in Islamabad",
+        "Violation pattern: FCA_Overcharge"
+      ],
+      "output_summary": "CollectiveCluster: authority=IESCO, violation=FCA_Overcharge, area=Islamabad, count=29",
+      "output": {
+        "id": "cluster_IESCO_FCA_ISB_May2026",
+        "authority": "IESCO",
+        "violationType": "FCA_Overcharge",
+        "area": "Islamabad",
+        "count": 29,
+        "status": "Open",
+        "collectivePetitionDrafted": true
+      }
+    }
+  ],
+  "final_outcome": {
+    "haq_score": 81,
+    "amount_owed": 1600,
+    "violation_type": "FCA_Overcharge",
+    "legal_basis": "NEPRA QTA Circular May 2025, Section 4(b)",
+    "confidence": "HIGH",
+    "complaint_filed": true,
+    "case_reference": "DW-2026-ISB-4521",
+    "collective_action_joined": true,
+    "urgent_deadline_detected": false,
+    "ghost_deadline_detected": false,
+    "recommended_action": "FILE_COMPLAINT",
+    "content_to_action_complete": true
+  }
+}

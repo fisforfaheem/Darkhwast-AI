@@ -1,0 +1,37 @@
+{
+  "docIntel": {
+    "documentType": "BISP_LETTER",
+    "authority": "BISP",
+    "consumerRef": "CNIC-37405-1234567-1",
+    "amounts": [],
+    "dates": [
+      {"label": "Letter Date", "date": "2026-04-15"}
+    ],
+    "deadlines": [
+      {"label": "Appeal Deadline", "date": "2026-06-15", "daysRemaining": 32, "isHidden": false}
+    ],
+    "keyFacts": [
+      "BISP Status Letter detected",
+      "Application status: Rejected",
+      "Reason: Missing socio-economic data"
+    ]
+  },
+  "rightsAnalysis": {
+    "violationDetected": true,
+    "violationType": "Procedural_Unfairness",
+    "legalBasis": "BISP Grievance Redressal Mechanism 2023, Section 6",
+    "maxAllowed": 0,
+    "actualCharged": 0,
+    "amountOwed": 0,
+    "haqScore": 75,
+    "haqReasoning": "BISP rules ke mutabiq aap ko rejection ke khilaf appeal ka poora haq hai. Aap ki documents mukammal hain.",
+    "confidenceLevel": "HIGH"
+  },
+  "complaintDraft": {
+    "urduDraft": "Bakhidmat Tehsil Office, BISP.\n\nJanab,\n\nMeri BISP kafaalat ki darkhwast bila wajah radd kar di gayi hai. Mere pas tamam zaroori kaghazat mojood hain. Baraye meherbani meri darkhwast par dobara nazar-e-sani ki jaye.\n\nShukriya.",
+    "englishDraft": "To the BISP Tehsil Office.\n\nSubject: Appeal against Application Rejection.\n\nMy BISP application was rejected without clear grounds. I possess all necessary eligibility documents. I request an appeal and re-evaluation as per BISP 2023 guidelines.\n\nRegards.",
+    "subject": "BISP Rejection Appeal",
+    "submissionAuthority": "BISP Appeal Tribunal",
+    "estimatedResponseDays": 30
+  }
+}

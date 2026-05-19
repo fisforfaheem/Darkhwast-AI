@@ -1,0 +1,20 @@
+{
+  "trace_format": "antigravity_agent_v1",
+  "agent": "RightsIntelligenceAgent",
+  "step": 3,
+  "status": "complete",
+  "reasoning": "Cross-referenced Firestore knowledgeBase ELECTRICITY_BILL with NEPRA QTA Circular May 2025 §4(b). FCA Rs. 3,800 exceeds slab B2 cap Rs. 2,200.",
+  "decision": "VIOLATION_CONFIRMED_HAQ_81",
+  "output": {
+    "violationDetected": true,
+    "violationType": "FCA_Overcharge",
+    "legalBasis": "NEPRA QTA Circular May 2025, Section 4(b)",
+    "maxAllowed": 2200,
+    "actualCharged": 3800,
+    "amountOwed": 1600,
+    "haqScore": 81,
+    "haqReasoning": "Aap se slab limit se zayada FCA charge kiya gaya hai. NEPRA rules ke mutabiq aap refund ke haqdar hain.",
+    "precedents": "29 similar IESCO FCA cases in Islamabad May 2026",
+    "confidenceLevel": "HIGH"
+  }
+}
