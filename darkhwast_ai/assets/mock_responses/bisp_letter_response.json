@@ -5,15 +5,23 @@
     "consumerRef": "CNIC-37405-1234567-1",
     "amounts": [],
     "dates": [
-      {"label": "Letter Date", "date": "2026-04-15"}
+      {
+        "label": "Letter Date",
+        "date": "2026-04-15"
+      }
     ],
     "deadlines": [
-      {"label": "Appeal Deadline", "date": "2026-06-15", "daysRemaining": 32, "isHidden": false}
+      {
+        "label": "Appeal Deadline",
+        "date": "2026-06-15",
+        "daysRemaining": 32,
+        "isHidden": false
+      }
     ],
     "keyFacts": [
       "BISP Status Letter detected",
       "Application status: Rejected",
-      "Reason: Missing socio-economic data"
+      "Reason: Missing socio-economic data — appealable"
     ]
   },
   "rightsAnalysis": {
@@ -24,14 +32,32 @@
     "actualCharged": 0,
     "amountOwed": 0,
     "haqScore": 75,
-    "haqReasoning": "BISP rules ke mutabiq aap ko rejection ke khilaf appeal ka poora haq hai. Aap ki documents mukammal hain.",
+    "haqReasoning": "BISP rules ke mutabiq aap ko rejection ke khilaf appeal ka poora haq hai. Documents mukammal hain — dobara review honi chahiye.",
     "confidenceLevel": "HIGH"
   },
   "complaintDraft": {
-    "urduDraft": "Bakhidmat Tehsil Office, BISP.\n\nJanab,\n\nMeri BISP kafaalat ki darkhwast bila wajah radd kar di gayi hai. Mere pas tamam zaroori kaghazat mojood hain. Baraye meherbani meri darkhwast par dobara nazar-e-sani ki jaye.\n\nShukriya.",
-    "englishDraft": "To the BISP Tehsil Office.\n\nSubject: Appeal against Application Rejection.\n\nMy BISP application was rejected without clear grounds. I possess all necessary eligibility documents. I request an appeal and re-evaluation as per BISP 2023 guidelines.\n\nRegards.",
+    "urduDraft": "بخدمت تحصیل آفس، BISP۔\n\nجناب،\n\nمیری BISP کفالت کی درخواست بلا وجہ رد کر دی گئی ہے (CNIC: 37405-1234567-1)۔ میرے پاس تمام ضروری کاغذات اور سروے ڈیٹا موجود ہیں۔ BISP Grievance Redressal Mechanism 2023 Section 6 کے تحت اپیل فائل کر رہا/رahi ہوں — برائے مہربانی میری درخواست پر دوبارہ نظرثانی کی جائے۔\n\nشکریہ۔",
+    "englishDraft": "To the BISP Tehsil Office.\n\nSubject: Appeal against Application Rejection — CNIC 37405-1234567-1.\n\nMy BISP application was rejected citing missing socio-economic data. I possess all required eligibility documents. Under BISP Grievance Redressal Mechanism 2023 Section 6, I request a formal appeal and re-evaluation.\n\nRegards.",
     "subject": "BISP Rejection Appeal",
     "submissionAuthority": "BISP Appeal Tribunal",
+    "submissionPortal": "bisp.gov.pk/grievance",
     "estimatedResponseDays": 30
+  },
+  "agentMessages": {
+    "docIntel": "BISP rejection letter — CNIC matched, procedural reason coded.",
+    "urgency": "Appeal window: 32 days — monitor, not critical today.",
+    "rights": "Procedural unfairness under Section 6 — HAQ 75, appeal recommended.",
+    "drafter": "Appeal letter drafted — Urdu + English for BISP tribunal.",
+    "pattern": "Explain mode or individual appeal — collective not applicable."
+  },
+  "draftsByIntent": {
+    "explainDocument": {
+      "urduDraft": "BISP نے آپ کی درخواست مسترد کر دی ہے کیونکہ 'socio-economic data missing' لکھا ہے۔ آپ کے پاس اپیل کے لیے 32 دن ہیں۔ اس کا مطلب ہے آپ دوبارہ دستاویزات جمع کروا سکتے ہیں۔",
+      "englishDraft": "BISP rejected your application citing missing survey data. You have 32 days to file an appeal with complete documents under the 2023 Grievance Mechanism.",
+      "subject": "BISP Letter — Plain Explanation",
+      "submissionAuthority": "BISP",
+      "submissionPortal": "bisp.gov.pk",
+      "estimatedResponseDays": 30
+    }
   }
 }

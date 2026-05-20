@@ -1,7 +1,13 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import '../../core/demo/demo_scenario_catalog.dart';
+import '../../features/setup/screens/ai_setup_screen.dart';
+import '../../features/demo/screens/demo_scenario_picker_screen.dart';
 import '../../features/onboarding/screens/splash_screen.dart';
 import '../../features/onboarding/screens/onboarding_screen.dart';
+import '../../features/scanner/screens/document_review_screen.dart';
 import '../../features/scanner/screens/scanner_screen.dart';
 import '../../features/agent_trace/screens/agent_trace_screen.dart';
 import '../../features/intent_selection/screens/intent_selection_screen.dart';
@@ -16,21 +22,66 @@ import '../../shared/widgets/nav_shell.dart';
 class AppRouter {
   static final router = GoRouter(
     initialLocation: '/',
+    errorBuilder: (context, state) => Scaffold(
+      appBar: AppBar(title: const Text('Page not found')),
+      body: Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(state.error?.toString() ?? 'Unknown route'),
+            const SizedBox(height: 16),
+            FilledButton(
+              onPressed: () => context.go('/home'),
+              child: const Text('Home'),
+            ),
+          ],
+        ),
+      ),
+    ),
     routes: [
       // Full-screen routes (No Bottom Nav)
+      GoRoute(path: '/', builder: (context, state) => const SplashScreen()),
       GoRoute(
-        path: '/',
-        builder: (context, state) => const SplashScreen(),
+        path: '/ai-setup',
+        builder: (context, state) => const AiSetupScreen(),
       ),
       GoRoute(
         path: '/onboarding',
         builder: (context, state) => const OnboardingScreen(),
       ),
       GoRoute(
+        path: '/demo-picker',
+        builder: (context, state) => const DemoScenarioPickerScreen(),
+      ),
+      GoRoute(
         path: '/scanner',
         builder: (context, state) {
-          final mode = state.extra as ScannerMode?;
-          return ScannerScreen(initialMode: mode);
+          final extra = state.extra;
+          if (extra is DemoScanLaunch) {
+            return ScannerScreen(demoLaunch: extra);
+          }
+          if (extra is ScannerMode) {
+            return ScannerScreen(initialMode: extra);
+          }
+          return const ScannerScreen();
+        },
+      ),
+      GoRoute(
+        path: '/document-review',
+        builder: (context, state) {
+          final extras = state.extra;
+          if (extras is! Map<String, dynamic>) {
+            return _missingRouteScreen(context, 'Koi photo nahi mili.');
+          }
+          final file = extras['file'];
+          if (file is! File) {
+            return _missingRouteScreen(context, 'Koi photo nahi mili.');
+          }
+          final crop = extras['crop'];
+          return DocumentReviewScreen(
+            imageFile: file,
+            initialCropNormalized: crop is Rect ? crop : null,
+          );
         },
       ),
       GoRoute(
@@ -83,16 +134,41 @@ class AppRouter {
         routes: [
           // These are just markers for the shell to know we are in the main area
           GoRoute(
-              path: '/home',
-              builder: (context, state) => const SizedBox.shrink()),
+            path: '/home',
+            builder: (context, state) => const SizedBox.shrink(),
+          ),
           GoRoute(
-              path: '/cases',
-              builder: (context, state) => const SizedBox.shrink()),
+            path: '/cases',
+            builder: (context, state) => const SizedBox.shrink(),
+          ),
           GoRoute(
-              path: '/about',
-              builder: (context, state) => const SizedBox.shrink()),
+            path: '/about',
+            builder: (context, state) => const SizedBox.shrink(),
+          ),
         ],
       ),
     ],
   );
+
+  static Widget _missingRouteScreen(BuildContext context, String message) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('DarkhwastAI')),
+      body: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(message, textAlign: TextAlign.center),
+              const SizedBox(height: 16),
+              FilledButton(
+                onPressed: () => context.go('/home'),
+                child: const Text('Home'),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 }

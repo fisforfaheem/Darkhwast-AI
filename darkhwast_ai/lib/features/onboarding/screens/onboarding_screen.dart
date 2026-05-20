@@ -20,7 +20,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   void _finishOnboarding() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('showOnboarding', false);
-    if (mounted) context.go('/home');
+    if (mounted) context.go('/ai-setup');
   }
 
   @override
@@ -38,19 +38,22 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 _buildPage(
                   icon: Icons.document_scanner_rounded,
                   title: "Koi bhi document\nscan karen",
-                  description: "Bijli ka bill ho ya sarkari notice, bas photo khainchein.",
+                  description:
+                      "Bijli ka bill ho ya sarkari notice, bas photo khainchein.",
                   color: AppColors.primary,
                 ),
                 _buildPage(
                   isGauge: true,
                   title: "AI apka haq\ndhundh leta hai",
-                  description: "Hamara AI qanoon ke mutabiq aap ka HAQ score nikalta hai.",
+                  description:
+                      "Hamara AI qanoon ke mutabiq aap ka HAQ score nikalta hai.",
                   color: AppColors.primary,
                 ),
                 _buildPage(
                   icon: Icons.check_circle_outline_rounded,
-                  title: "Complaint automatic\nfile ho jati hai",
-                  description: "Bas confirm karain aur AI ap ki darkhwast portal par bhaij dega.",
+                  title: "Complaint tayyar\nho jati hai",
+                  description:
+                      "AI aap ka case samajh kar darkhwast draft banata hai — aap review kar ke submit karte hain.",
                   color: AppColors.success,
                 ),
               ],
@@ -64,7 +67,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 onPressed: _finishOnboarding,
                 child: Text(
                   "Skip",
-                  style: AppTextStyles.body.copyWith(color: AppColors.primary, fontWeight: FontWeight.bold),
+                  style: AppTextStyles.body.copyWith(
+                    color: AppColors.primary,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
             ),
@@ -79,7 +85,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   // Dot indicators
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
-                    children: List.generate(3, (index) => _buildIndicator(index == _currentPage)),
+                    children: List.generate(
+                      3,
+                      (index) => _buildIndicator(index == _currentPage),
+                    ),
                   ),
                   const SizedBox(height: 32),
                   // Action Button
@@ -89,18 +98,26 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     child: ElevatedButton(
                       onPressed: () {
                         if (_currentPage < 2) {
-                          _pageController.nextPage(duration: 400.ms, curve: Curves.easeInOut);
+                          _pageController.nextPage(
+                            duration: 400.ms,
+                            curve: Curves.easeInOut,
+                          );
                         } else {
                           _finishOnboarding();
                         }
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.primary,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
                       ),
                       child: Text(
                         _currentPage == 2 ? "Shuru Karen" : "Aage Barhein",
-                        style: AppTextStyles.body.copyWith(color: Colors.white, fontWeight: FontWeight.bold),
+                        style: AppTextStyles.body.copyWith(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ),
                   ),
@@ -120,7 +137,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       height: 8,
       width: isActive ? 24 : 8,
       decoration: BoxDecoration(
-        color: isActive ? AppColors.accent : AppColors.textSecondary.withValues(alpha: 0.3),
+        color: isActive
+            ? AppColors.accent
+            : AppColors.textSecondary.withValues(alpha: 0.3),
         borderRadius: BorderRadius.circular(4),
       ),
     );
@@ -143,7 +162,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               radius: 80.0,
               lineWidth: 12.0,
               percent: 0.84,
-              center: Text("84", style: AppTextStyles.display.copyWith(color: AppColors.primary)),
+              center: Text(
+                "84",
+                style: AppTextStyles.display.copyWith(color: AppColors.primary),
+              ),
               progressColor: AppColors.primary,
               backgroundColor: AppColors.primary.withValues(alpha: 0.1),
               circularStrokeCap: CircularStrokeCap.round,
@@ -155,17 +177,20 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 .animate()
                 .scale(duration: 600.ms, curve: Curves.easeOutBack)
                 .shake(delay: 500.ms),
-          
+
           const SizedBox(height: 48),
-          
+
           Text(
             title,
             textAlign: TextAlign.center,
-            style: AppTextStyles.headline.copyWith(color: AppColors.primary, fontSize: 28),
+            style: AppTextStyles.headline.copyWith(
+              color: AppColors.primary,
+              fontSize: 28,
+            ),
           ).animate().fadeIn(duration: 600.ms).slideY(begin: 0.2, end: 0),
-          
+
           const SizedBox(height: 16),
-          
+
           Text(
             description,
             textAlign: TextAlign.center,

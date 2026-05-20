@@ -1,5 +1,6 @@
+import 'dart:async';
 import 'dart:io';
-import 'package:camera/camera.dart';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -7,165 +8,260 @@ import 'package:image_picker/image_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
 import '../../../core/constants/colors.dart';
 import '../../../core/constants/text_styles.dart';
+import '../../../core/demo/demo_scenario_catalog.dart';
+import '../../../core/providers/demo_provider.dart';
 import '../../../core/providers/service_providers.dart';
+import '../../../core/services/native_camera_capture.dart';
+import '../utils/image_capture_utils.dart';
+import '../widgets/camera_permission_dialog.dart';
+import '../widgets/voice_waveform.dart';
 
 enum ScannerMode { camera, voice }
 
-class ScannerScreen extends ConsumerStatefulWidget {
-  const ScannerScreen({super.key, this.initialMode});
+/// Default crop hint for document review (not tied to a fake viewfinder).
+const _defaultReviewCrop = Rect.fromLTWH(0.08, 0.12, 0.84, 0.7);
 
-  /// Optional: open directly in voice mode from home shortcuts.
+class ScannerScreen extends ConsumerStatefulWidget {
+  const ScannerScreen({super.key, this.initialMode, this.demoLaunch});
+
   final ScannerMode? initialMode;
+  final DemoScanLaunch? demoLaunch;
 
   @override
   ConsumerState<ScannerScreen> createState() => _ScannerScreenState();
 }
 
 class _ScannerScreenState extends ConsumerState<ScannerScreen> {
-  CameraController? _controller;
-  bool _isInitialized = false;
-  bool _isInitializing = true;
+  bool _cameraGranted = false;
+  bool _checkingPermission = true;
   String? _cameraError;
   ScannerMode _currentMode = ScannerMode.camera;
   final ImagePicker _picker = ImagePicker();
 
+  /// Shown when user cancels native camera or on demo picker (no fake viewfinder).
+  bool _showCaptureHub = false;
+
   bool _isListening = false;
-  bool _voiceReady = false;
+  bool _isSubmittingVoice = false;
   String? _voiceError;
   String _transcription = '';
   bool _isReading = false;
+  bool _isCapturing = false;
+  bool _autoCameraAttempted = false;
+  Timer? _voiceFinalizeTimer;
+  bool _voiceStopInFlight = false;
+
+  DemoScenario? get _demoScenario =>
+      DemoScenarioCatalog.byId(widget.demoLaunch?.scenarioId ?? '');
+
+  bool get _isDemo => widget.demoLaunch != null;
+
+  @override
+  void dispose() {
+    _voiceFinalizeTimer?.cancel();
+    super.dispose();
+  }
 
   @override
   void initState() {
     super.initState();
-    if (widget.initialMode == ScannerMode.voice) {
+    if (widget.demoLaunch != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => _initDemoLaunch());
+    } else if (widget.initialMode == ScannerMode.voice) {
       _currentMode = ScannerMode.voice;
       WidgetsBinding.instance.addPostFrameCallback((_) => _startVoiceMode());
     } else {
-      // Wait for layout so CameraPreview gets non-zero constraints (fixes
-      // Android "Width is zero" / black texture).
-      WidgetsBinding.instance.addPostFrameCallback((_) => _bootstrapCamera());
+      WidgetsBinding.instance.addPostFrameCallback(
+        (_) => _launchNativeCameraFlow(),
+      );
     }
   }
 
-  void _onCameraValueChanged() {
-    if (!mounted || _controller == null) return;
-    final ready = _controller!.value.isInitialized &&
-        _controller!.value.previewSize != null;
-    if (ready != _isInitialized) {
-      setState(() => _isInitialized = ready);
-    }
-  }
-
-  Future<void> _bootstrapCamera() async {
-    await _controller?.dispose();
-    _controller = null;
-
+  Future<void> _initDemoLaunch() async {
+    final launch = widget.demoLaunch!;
+    await ref
+        .read(demoScenarioProvider.notifier)
+        .setScenario(launch.scenarioId);
     if (!mounted) return;
-    setState(() {
-      _isInitialized = false;
-      _isInitializing = true;
-      _cameraError = null;
-    });
+    await _ensureCameraAccess();
+    if (!mounted) return;
+    setState(() => _showCaptureHub = true);
+  }
 
-    final status = await Permission.camera.request();
-    if (!status.isGranted) {
-      if (!mounted) return;
-      setState(() {
-        _isInitializing = false;
-        _cameraError =
-            'Camera permission denied. Neeche capture dabayen ya gallery use karen.';
-      });
+  /// Opens the device camera immediately — no intermediate viewfinder UI.
+  Future<void> _launchNativeCameraFlow() async {
+    if (_autoCameraAttempted) return;
+    _autoCameraAttempted = true;
+
+    await _ensureCameraAccess();
+    if (!mounted) return;
+
+    if (!_cameraGranted) {
+      setState(() => _showCaptureHub = true);
       return;
     }
 
-    try {
-      final cameras = await availableCameras();
-      if (cameras.isEmpty) {
-        throw CameraException('no_camera', 'No camera found on this device');
-      }
+    final captured = await _captureFromNativeCamera();
+    if (!mounted) return;
 
-      final camera = cameras.firstWhere(
-        (c) => c.lensDirection == CameraLensDirection.back,
-        orElse: () => cameras.first,
+    if (!captured) {
+      setState(() => _showCaptureHub = true);
+    }
+  }
+
+  Future<void> _ensureCameraAccess() async {
+    setState(() {
+      _checkingPermission = true;
+      _cameraError = null;
+    });
+
+    var status = await Permission.camera.status;
+    if (!status.isGranted) {
+      status = await Permission.camera.request();
+    }
+
+    if (!status.isGranted && mounted) {
+      final permanentlyDenied = status.isPermanentlyDenied;
+      final retry = await showCameraPermissionDialog(
+        context,
+        permanentlyDenied: permanentlyDenied,
       );
-
-      final controller = CameraController(
-        camera,
-        ResolutionPreset.medium,
-        enableAudio: false,
-        imageFormatGroup: ImageFormatGroup.jpeg,
-      );
-
-      controller.addListener(_onCameraValueChanged);
-      await controller.initialize();
-
-      if (!mounted) {
-        controller.removeListener(_onCameraValueChanged);
-        await controller.dispose();
-        return;
-      }
-
-      _controller = controller;
-      final previewReady = controller.value.previewSize != null;
-      setState(() {
-        _isInitialized = previewReady;
-        _isInitializing = false;
-        _cameraError = previewReady
-            ? null
-            : 'Preview load ho raha hai — capture button ab bhi kaam karega.';
-      });
-    } catch (e) {
-      debugPrint('Camera init error: $e');
       if (!mounted) return;
-      setState(() {
-        _isInitializing = false;
-        _isInitialized = false;
-        _cameraError =
-            'Live preview nahi chal saka. Neeche capture dabayen — camera khul jayega.';
-      });
-    }
-  }
-
-  @override
-  void dispose() {
-    _controller?.removeListener(_onCameraValueChanged);
-    _controller?.dispose();
-    super.dispose();
-  }
-
-  Future<void> _captureImage() async {
-    if (_controller != null && _controller!.value.isInitialized) {
-      try {
-        final image = await _controller!.takePicture();
-        await _processImage(File(image.path));
-        return;
-      } catch (e) {
-        debugPrint('Camera capture error: $e');
+      if (retry) {
+        status = permanentlyDenied
+            ? await Permission.camera.status
+            : await Permission.camera.request();
       }
     }
 
-    // Fallback: native camera sheet (works on simulator / when preview fails)
-    final XFile? image = await _picker.pickImage(
-      source: ImageSource.camera,
-      imageQuality: 85,
+    if (!mounted) return;
+    setState(() {
+      _checkingPermission = false;
+      _cameraGranted = status.isGranted;
+      _cameraError = status.isGranted
+          ? null
+          : 'Camera band hai. Gallery se photo chunain ya Settings se ijazat den.';
+    });
+  }
+
+  Future<void> _continueDemoWithImage(File file) async {
+    final scenario = _demoScenario;
+    if (scenario == null) return;
+    setState(() => _isReading = true);
+    await Future.delayed(const Duration(milliseconds: 500));
+    if (!mounted) return;
+    setState(() => _isReading = false);
+    context.push(
+      '/agent-trace',
+      extra: {'file': file, 'voiceText': scenario.demoOcrText},
     );
-    if (image != null) {
-      await _processImage(File(image.path));
+  }
+
+  Future<void> _openReview(File file) async {
+    final path = await context.push<String>(
+      '/document-review',
+      extra: {'file': file, 'crop': _defaultReviewCrop},
+    );
+    if (path != null && mounted) {
+      await _processImage(File(path));
+    } else if (mounted && _currentMode == ScannerMode.camera) {
+      setState(() => _showCaptureHub = true);
+    }
+  }
+
+  /// Returns true if a photo was taken and handed to review.
+  Future<bool> _captureFromNativeCamera() async {
+    if (_isCapturing || _isReading) return false;
+
+    if (!_cameraGranted) {
+      await _ensureCameraAccess();
+      if (!_cameraGranted) return false;
+    }
+
+    setState(() => _isCapturing = true);
+    try {
+      final path = await NativeCameraCapture.capture();
+      if (path == null || !mounted) return false;
+
+      final normalized = await normalizeImageFile(File(path));
+      await _openReview(normalized);
+      return true;
+    } catch (e) {
+      debugPrint('Camera capture error: $e');
+      if (!mounted) return false;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Photo nahi li ja saki. Gallery se chunain.'),
+        ),
+      );
+      return false;
+    } finally {
+      if (mounted) setState(() => _isCapturing = false);
     }
   }
 
   Future<void> _pickFromGallery() async {
-    final XFile? image = await _picker.pickImage(
+    final image = await _picker.pickImage(
       source: ImageSource.gallery,
-      imageQuality: 85,
+      imageQuality: 95,
     );
-    if (image != null) {
-      await _processImage(File(image.path));
-    }
+    if (image == null || !mounted) return;
+    final normalized = await normalizeImageFile(File(image.path));
+    await _openReview(normalized);
+  }
+
+  Future<void> _openUploadSheet() async {
+    await showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: AppColors.background,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(
+                'Document upload',
+                style: AppTextStyles.headline.copyWith(
+                  color: AppColors.primary,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Gallery se bill ya notice ki photo chunain',
+                style: AppTextStyles.body.copyWith(
+                  color: AppColors.textSecondary,
+                ),
+              ),
+              const SizedBox(height: 20),
+              ListTile(
+                leading: const Icon(
+                  Icons.photo_library_outlined,
+                  color: AppColors.primary,
+                ),
+                title: const Text('Gallery se chunain'),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  _pickFromGallery();
+                },
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   Future<void> _processImage(File file) async {
+    if (widget.demoLaunch != null && _demoScenario != null) {
+      await _continueDemoWithImage(file);
+      return;
+    }
+
     setState(() => _isReading = true);
 
     final ocrService = ref.read(ocrServiceProvider);
@@ -174,10 +270,7 @@ class _ScannerScreenState extends ConsumerState<ScannerScreen> {
     if (!mounted) return;
     setState(() => _isReading = false);
 
-    context.push('/agent-trace', extra: {
-      'file': file,
-      'voiceText': text,
-    });
+    context.push('/agent-trace', extra: {'file': file, 'voiceText': text});
   }
 
   Future<void> _startVoiceMode() async {
@@ -196,37 +289,39 @@ class _ScannerScreenState extends ConsumerState<ScannerScreen> {
 
     setState(() {
       _currentMode = ScannerMode.voice;
+      _showCaptureHub = false;
       _isListening = false;
-      _voiceReady = false;
+      _isSubmittingVoice = false;
       _voiceError = null;
       _transcription = '';
     });
 
     final voiceService = ref.read(voiceServiceProvider);
+    voiceService.onStatus = _onSpeechStatus;
     final ok = await voiceService.init();
     if (!mounted) return;
 
     if (!ok) {
       setState(() {
-        _voiceError = voiceService.lastError ??
+        _voiceError =
+            voiceService.lastError ??
             'Voice recognition is not available on this device.';
         _currentMode = ScannerMode.camera;
+        _showCaptureHub = true;
       });
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(_voiceError!)),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(_voiceError!)));
       return;
     }
 
     final started = await voiceService.startListening(
       onResult: (text, isFinal) {
         if (!mounted) return;
-        setState(() {
-          _transcription = text;
-          if (isFinal && text.trim().isNotEmpty) {
-            _isListening = false;
-          }
-        });
+        setState(() => _transcription = text);
+        if (isFinal && text.trim().isNotEmpty) {
+          _scheduleVoiceFinish(delayMs: 400);
+        }
       },
     );
 
@@ -236,158 +331,203 @@ class _ScannerScreenState extends ConsumerState<ScannerScreen> {
       setState(() {
         _voiceError = voiceService.lastError ?? 'Microphone start nahi hua.';
         _currentMode = ScannerMode.camera;
+        _showCaptureHub = true;
       });
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(_voiceError!)),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(_voiceError!)));
       return;
     }
 
-    setState(() {
-      _isListening = true;
-      _voiceReady = true;
+    setState(() => _isListening = true);
+  }
+
+  void _onSpeechStatus(String status) {
+    if (status == 'done' ||
+        status == 'notListening' ||
+        status == 'doneNoResult') {
+      _scheduleVoiceFinish(delayMs: 500);
+    }
+  }
+
+  void _scheduleVoiceFinish({int delayMs = 800}) {
+    if (_voiceStopInFlight || _isSubmittingVoice) return;
+    _voiceFinalizeTimer?.cancel();
+    _voiceFinalizeTimer = Timer(Duration(milliseconds: delayMs), () {
+      if (mounted && _currentMode == ScannerMode.voice) {
+        unawaited(_stopVoiceMode());
+      }
     });
   }
 
   Future<void> _stopVoiceMode() async {
+    if (_voiceStopInFlight) return;
+    _voiceStopInFlight = true;
+    _voiceFinalizeTimer?.cancel();
+
+    if (mounted) {
+      setState(() {
+        _isListening = false;
+        _isSubmittingVoice = true;
+      });
+    }
+
     final voiceService = ref.read(voiceServiceProvider);
-    final lastWords = await voiceService.stopListening();
+    String? lastWords;
+    try {
+      lastWords = await voiceService.stopListening();
+    } catch (e) {
+      debugPrint('stopListening failed: $e');
+      await voiceService.cancel();
+    }
+
     final text =
         (_transcription.trim().isNotEmpty ? _transcription : lastWords ?? '')
             .trim();
 
+    if (!mounted) {
+      _voiceStopInFlight = false;
+      return;
+    }
+
     if (text.isEmpty) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Kuch sunai nahi diya. Dobara koshish karen.'),
-          ),
-        );
-        setState(() {
-          _isListening = false;
-          _voiceReady = false;
-          _currentMode = ScannerMode.camera;
-        });
-      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Kuch sunai nahi diya. Dobara koshish karen.'),
+        ),
+      );
+      setState(() {
+        _isSubmittingVoice = false;
+        _currentMode = ScannerMode.camera;
+        _showCaptureHub = true;
+      });
+      _voiceStopInFlight = false;
+      return;
+    }
+
+    await context.push('/agent-trace', extra: {'voiceText': text});
+
+    if (!mounted) {
+      _voiceStopInFlight = false;
       return;
     }
 
     setState(() {
-      _isListening = false;
-      _isReading = true;
+      _isSubmittingVoice = false;
+      _currentMode = ScannerMode.camera;
+      _showCaptureHub = true;
+      _transcription = '';
     });
-
-    if (!mounted) return;
-    setState(() => _isReading = false);
-
-    context.push('/agent-trace', extra: {
-      'voiceText': text,
-    });
+    _voiceStopInFlight = false;
   }
 
   @override
   Widget build(BuildContext context) {
-    final topInset = MediaQuery.paddingOf(context).top;
+    final padding = MediaQuery.paddingOf(context);
 
     return Scaffold(
       backgroundColor: Colors.black,
-      extendBodyBehindAppBar: true,
       body: Stack(
         fit: StackFit.expand,
         children: [
           if (_currentMode == ScannerMode.camera)
-            _buildCameraLayer()
+            _buildCameraBody(padding)
           else
-            const ColoredBox(color: Colors.black),
-          if (_currentMode == ScannerMode.camera &&
-              (_isInitialized || _isInitializing))
-            Positioned.fill(
-              child: IgnorePointer(
-                child: CustomPaint(painter: ScannerOverlayPainter()),
-              ),
+            _buildVoiceBody(padding),
+          if (widget.demoLaunch != null &&
+              _demoScenario != null &&
+              _currentMode == ScannerMode.camera)
+            Positioned(
+              left: 16,
+              right: 16,
+              top: padding.top + 56 + 8,
+              child: _DemoScenarioBanner(scenario: _demoScenario!),
             ),
-          // Top bar floats over full-bleed preview (no SafeArea shrink on camera).
-          Positioned(
-            top: topInset,
-            left: 0,
-            right: 0,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 4),
-              child: Row(
-                children: [
-                  IconButton(
-                    onPressed: () => context.pop(),
-                    icon: const Icon(Icons.close_rounded, color: Colors.white),
-                  ),
-                  const Spacer(),
-                  if (_currentMode == ScannerMode.camera &&
-                      _controller != null &&
-                      _isInitialized)
-                    IconButton(
-                      onPressed: () async {
-                        final mode = _controller!.value.flashMode;
-                        await _controller!.setFlashMode(
-                          mode == FlashMode.off
-                              ? FlashMode.torch
-                              : FlashMode.off,
-                        );
-                        if (mounted) setState(() {});
-                      },
-                      icon: Icon(
-                        _controller!.value.flashMode == FlashMode.torch
-                            ? Icons.flash_on_rounded
-                            : Icons.flash_off_rounded,
-                        color: Colors.white,
-                      ),
-                    ),
-                ],
-              ),
-            ),
-          ),
-          _buildBottomControls(),
-          if (_isReading) _buildProcessingOverlay(),
+          if (_currentMode == ScannerMode.camera) _buildBottomControls(),
+          if (_isReading || _isCapturing || _isSubmittingVoice)
+            _buildProcessingOverlay(),
         ],
       ),
     );
   }
 
-  Widget _buildCameraLayer() {
-    if (_controller != null && _controller!.value.isInitialized) {
-      return Positioned.fill(
-        child: _FullscreenCameraPreview(controller: _controller!),
-      );
-    }
-
-    return Positioned.fill(
-      child: Container(
-        color: const Color(0xFF111111),
-        padding: const EdgeInsets.fromLTRB(32, 100, 32, 160),
+  Widget _buildCameraBody(EdgeInsets padding) {
+    if (!_showCaptureHub && (_checkingPermission || _isCapturing)) {
+      return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            if (_isInitializing)
-              const CircularProgressIndicator(color: AppColors.accent)
-            else
-              const Icon(Icons.photo_camera_outlined,
-                  color: Colors.white54, size: 64),
-            const SizedBox(height: 24),
+            const CircularProgressIndicator(color: AppColors.accent),
+            const SizedBox(height: 20),
             Text(
-              _isInitializing
-                  ? 'Camera start ho raha hai...'
-                  : (_cameraError ?? 'Camera tayyar nahi'),
+              _isCapturing
+                  ? 'Camera khul raha hai...'
+                  : 'Camera tayyar ho raha hai...',
               style: AppTextStyles.body.copyWith(color: Colors.white70),
-              textAlign: TextAlign.center,
             ),
-            if (!_isInitializing && _cameraError != null) ...[
-              const SizedBox(height: 16),
-              TextButton(
-                onPressed: _bootstrapCamera,
-                child: const Text('Dobara koshish karen'),
-              ),
-            ],
           ],
         ),
-      ),
+      );
+    }
+
+    return _buildCaptureHub(padding);
+  }
+
+  Widget _buildCaptureHub(EdgeInsets padding) {
+    final ready = _cameraGranted && !_checkingPermission;
+
+    return Column(
+      children: [
+        SizedBox(height: padding.top + 8),
+        Align(
+          alignment: Alignment.centerLeft,
+          child: IconButton(
+            onPressed: _isReading ? null : () => context.pop(),
+            icon: const Icon(Icons.close_rounded, color: Colors.white),
+          ),
+        ),
+        Expanded(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 32),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  ready
+                      ? Icons.document_scanner_outlined
+                      : Icons.no_photography_outlined,
+                  size: 72,
+                  color: Colors.white54,
+                ),
+                const SizedBox(height: 24),
+                Text(
+                  _isDemo
+                      ? 'Curated demo — document ki photo len'
+                      : 'Bill ya notice ki photo len',
+                  style: AppTextStyles.title.copyWith(color: Colors.white),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  ready
+                      ? 'Neeche shutter dabayen — seedha phone camera khulega'
+                      : (_cameraError ??
+                            'Camera ijazat chahiye ya gallery se photo chunain'),
+                  style: AppTextStyles.body.copyWith(color: Colors.white60),
+                  textAlign: TextAlign.center,
+                ),
+                if (_cameraError != null) ...[
+                  const SizedBox(height: 16),
+                  TextButton(
+                    onPressed: _ensureCameraAccess,
+                    child: const Text('Ijazat dubara mangen'),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ),
+      ],
     );
   }
 
@@ -404,56 +544,59 @@ class _ScannerScreenState extends ConsumerState<ScannerScreen> {
             gradient: LinearGradient(
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
-              colors: [
-                Colors.transparent,
-                Colors.black.withValues(alpha: 0.85)
-              ],
+              colors: [Colors.transparent, Colors.black.withValues(alpha: 0.9)],
             ),
           ),
-          child: _currentMode == ScannerMode.camera
-              ? _buildCameraControls()
-              : _buildVoiceControls(),
+          child: _buildCameraControls(),
         ),
       ),
     );
   }
 
   Widget _buildCameraControls() {
+    final ready = _cameraGranted && !_checkingPermission && !_isCapturing;
+    final demo = _isDemo;
+
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
         Text(
-          'Bill ya notice ko frame ke andar rakhein',
+          demo
+              ? 'Shutter se photo len ya Gallery se bill chunain'
+              : 'Shutter — native camera turant khulega',
           style: AppTextStyles.caption.copyWith(color: Colors.white70),
           textAlign: TextAlign.center,
         ),
-        const SizedBox(height: 28),
+        const SizedBox(height: 24),
         GestureDetector(
-          onTap: _isReading ? null : _captureImage,
+          onTap: ready && !_isReading ? _captureFromNativeCamera : null,
           child: Container(
-            width: 72,
-            height: 72,
+            width: 70,
+            height: 70,
             padding: const EdgeInsets.all(3),
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              border: Border.all(color: Colors.white, width: 3),
+              border: Border.all(
+                color: ready ? AppColors.accent : Colors.white38,
+                width: 3,
+              ),
             ),
             child: Container(
-              decoration: const BoxDecoration(
-                color: AppColors.accent,
+              decoration: BoxDecoration(
+                color: ready ? AppColors.accent : Colors.white24,
                 shape: BoxShape.circle,
               ),
             ),
           ),
         ),
-        const SizedBox(height: 28),
+        const SizedBox(height: 24),
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: [
             _ModeButton(
               icon: Icons.photo_library_outlined,
-              label: 'Gallery',
-              onTap: _isReading ? () {} : _pickFromGallery,
+              label: 'Upload',
+              onTap: _isReading ? () {} : _openUploadSheet,
             ),
             _ModeButton(
               icon: Icons.mic_none_rounded,
@@ -466,20 +609,41 @@ class _ScannerScreenState extends ConsumerState<ScannerScreen> {
     );
   }
 
+  Widget _buildVoiceBody(EdgeInsets padding) {
+    return Padding(
+      padding: EdgeInsets.only(top: padding.top),
+      child: Column(
+        children: [
+          Align(
+            alignment: Alignment.centerLeft,
+            child: IconButton(
+              onPressed: _isReading ? null : () => context.pop(),
+              icon: const Icon(Icons.close_rounded, color: Colors.white),
+            ),
+          ),
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(24, 0, 24, 200),
+              child: _buildVoiceControls(),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildVoiceControls() {
     return Column(
-      mainAxisSize: MainAxisSize.min,
+      mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        Icon(
-          _isListening ? Icons.mic_rounded : Icons.mic_off_rounded,
-          color: _isListening ? AppColors.accent : Colors.white38,
-          size: 40,
-        ),
-        const SizedBox(height: 12),
+        VoiceWaveform(isActive: _isListening),
+        const SizedBox(height: 16),
         Text(
-          _isListening
-              ? 'Boliye — khatam hone par stop dabayen'
-              : (_voiceReady ? 'Processing...' : 'Voice tayyar ho raha hai...'),
+          _isSubmittingVoice
+              ? 'Agents shuru ho rahe hain...'
+              : _isListening
+              ? 'Bol rahe hain — khatam par stop dabayen'
+              : 'Microphone tayyar ho raha hai...',
           style: AppTextStyles.caption.copyWith(color: Colors.white70),
           textAlign: TextAlign.center,
         ),
@@ -507,35 +671,42 @@ class _ScannerScreenState extends ConsumerState<ScannerScreen> {
         ),
         const SizedBox(height: 28),
         GestureDetector(
-          onTap: _isReading || !_isListening ? null : _stopVoiceMode,
+          onTap: _isSubmittingVoice || _isReading ? null : _stopVoiceMode,
           child: Container(
             width: 72,
             height: 72,
             decoration: BoxDecoration(
-              color: _isListening ? AppColors.urgent : Colors.white24,
+              color: _isListening || _transcription.isNotEmpty
+                  ? AppColors.urgent
+                  : Colors.white24,
               shape: BoxShape.circle,
             ),
-            child:
-                const Icon(Icons.stop_rounded, color: Colors.white, size: 36),
+            child: const Icon(
+              Icons.stop_rounded,
+              color: Colors.white,
+              size: 36,
+            ),
           ),
         ),
         const SizedBox(height: 12),
         TextButton(
-          onPressed: _isReading
+          onPressed: _isSubmittingVoice || _isReading
               ? null
               : () async {
+                  _voiceFinalizeTimer?.cancel();
+                  _voiceStopInFlight = false;
                   await ref.read(voiceServiceProvider).cancel();
                   if (mounted) {
                     setState(() {
                       _currentMode = ScannerMode.camera;
                       _isListening = false;
+                      _isSubmittingVoice = false;
+                      _showCaptureHub = true;
+                      _transcription = '';
                     });
                   }
                 },
-          child: const Text(
-            'Cancel',
-            style: TextStyle(color: Colors.white70),
-          ),
+          child: const Text('Cancel', style: TextStyle(color: Colors.white70)),
         ),
       ],
     );
@@ -551,7 +722,11 @@ class _ScannerScreenState extends ConsumerState<ScannerScreen> {
             const CircularProgressIndicator(color: AppColors.accent),
             const SizedBox(height: 20),
             Text(
-              'Document parh rahe hain...',
+              _isCapturing
+                  ? 'Camera khul raha hai...'
+                  : _isSubmittingVoice
+                  ? 'Voice se agents chal rahe hain...'
+                  : 'Document parh rahe hain...',
               style: AppTextStyles.title.copyWith(color: Colors.white),
             ),
           ],
@@ -561,55 +736,50 @@ class _ScannerScreenState extends ConsumerState<ScannerScreen> {
   }
 }
 
-/// Full-bleed camera preview — scales to cover entire screen in portrait.
-class _FullscreenCameraPreview extends StatelessWidget {
-  const _FullscreenCameraPreview({required this.controller});
+class _DemoScenarioBanner extends StatelessWidget {
+  const _DemoScenarioBanner({required this.scenario});
 
-  final CameraController controller;
+  final DemoScenario scenario;
 
   @override
   Widget build(BuildContext context) {
-    if (!controller.value.isInitialized) {
-      return const ColoredBox(color: Colors.black);
-    }
-
-    final screen = MediaQuery.sizeOf(context);
-    final previewRatio = controller.value.aspectRatio;
-
-    // BoxFit.cover math: scale until preview fills width AND height.
-    var scale = screen.aspectRatio * previewRatio;
-    if (scale < 1) scale = 1 / scale;
-
-    return ColoredBox(
-      color: Colors.black,
-      child: SizedBox.expand(
-        child: ClipRect(
-          child: Transform.scale(
-            scale: scale,
-            alignment: Alignment.center,
-            child: Center(
-              child: AspectRatio(
-                aspectRatio: previewRatio,
-                child: CameraPreview(controller),
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: AppColors.accent.withValues(alpha: 0.9),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Row(
+        children: [
+          Icon(scenario.icon, color: AppColors.primary, size: 20),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              'Curated demo: ${scenario.titleUrdu}',
+              style: AppTextStyles.caption.copyWith(
+                color: AppColors.primary,
+                fontWeight: FontWeight.bold,
               ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
             ),
           ),
-        ),
+        ],
       ),
     );
   }
 }
 
 class _ModeButton extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final VoidCallback onTap;
-
   const _ModeButton({
     required this.icon,
     required this.label,
     required this.onTap,
   });
+
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -622,81 +792,13 @@ class _ModeButton extends StatelessWidget {
           children: [
             Icon(icon, color: Colors.white, size: 26),
             const SizedBox(height: 6),
-            Text(label,
-                style: AppTextStyles.caption.copyWith(color: Colors.white)),
+            Text(
+              label,
+              style: AppTextStyles.caption.copyWith(color: Colors.white),
+            ),
           ],
         ),
       ),
     );
   }
-}
-
-class ScannerOverlayPainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = Colors.black.withValues(alpha: 0.55)
-      ..style = PaintingStyle.fill;
-
-    // Viewfinder uses most of the screen between top bar and bottom controls.
-    final topPad = size.height * 0.12;
-    final bottomPad = size.height * 0.28;
-    final frameHeight = size.height - topPad - bottomPad;
-    final rect = Rect.fromCenter(
-      center: Offset(size.width / 2, topPad + frameHeight / 2),
-      width: size.width * 0.88,
-      height: frameHeight.clamp(size.height * 0.45, size.height * 0.72),
-    );
-
-    canvas.drawPath(
-      Path.combine(
-        PathOperation.difference,
-        Path()..addRect(Rect.fromLTWH(0, 0, size.width, size.height)),
-        Path()
-          ..addRRect(RRect.fromRectAndRadius(rect, const Radius.circular(12))),
-      ),
-      paint,
-    );
-
-    final cornerPaint = Paint()
-      ..color = AppColors.accent
-      ..strokeWidth = 3
-      ..style = PaintingStyle.stroke;
-
-    const cornerSize = 28.0;
-
-    void drawCorner(Offset start, Offset corner, Offset end) {
-      canvas.drawPath(
-        Path()
-          ..moveTo(start.dx, start.dy)
-          ..lineTo(corner.dx, corner.dy)
-          ..lineTo(end.dx, end.dy),
-        cornerPaint,
-      );
-    }
-
-    drawCorner(
-      Offset(rect.left, rect.top + cornerSize),
-      rect.topLeft,
-      Offset(rect.left + cornerSize, rect.top),
-    );
-    drawCorner(
-      Offset(rect.right - cornerSize, rect.top),
-      rect.topRight,
-      Offset(rect.right, rect.top + cornerSize),
-    );
-    drawCorner(
-      Offset(rect.left, rect.bottom - cornerSize),
-      rect.bottomLeft,
-      Offset(rect.left + cornerSize, rect.bottom),
-    );
-    drawCorner(
-      Offset(rect.right - cornerSize, rect.bottom),
-      rect.bottomRight,
-      Offset(rect.right, rect.bottom - cornerSize),
-    );
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }

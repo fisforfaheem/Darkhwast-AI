@@ -5,9 +5,14 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'dart:async';
 import '../../../core/constants/colors.dart';
 import '../../../core/constants/text_styles.dart';
+import '../../../core/models/collective_cluster.dart';
+import '../../../core/models/deadline_alert.dart';
+import '../../../core/models/document_entity.dart';
+import '../../../core/models/rights_analysis.dart';
 import '../../../shared/widgets/haq_gauge.dart';
 import '../../../core/providers/case_providers.dart';
 import '../../agent_trace/providers/agent_pipeline_provider.dart';
+import '../../../shared/widgets/pipeline_data_error.dart';
 
 class HaqDashboardScreen extends ConsumerWidget {
   const HaqDashboardScreen({super.key});
@@ -25,9 +30,8 @@ class HaqDashboardScreen extends ConsumerWidget {
     final mainDeadline = deadlines.isNotEmpty ? deadlines.first : null;
 
     if (rights == null || doc == null) {
-      return const Scaffold(
-        backgroundColor: Color(0xFFF5F4F0),
-        body: Center(child: CircularProgressIndicator()),
+      return const PipelineDataError(
+        message: 'HAQ analysis load nahi hui. Dobara scan karen.',
       );
     }
 
@@ -36,8 +40,10 @@ class HaqDashboardScreen extends ConsumerWidget {
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        title: Text("Aapka Haq Analysis",
-            style: AppTextStyles.title.copyWith(color: AppColors.primary)),
+        title: Text(
+          "Aapka Haq Analysis",
+          style: AppTextStyles.title.copyWith(color: AppColors.primary),
+        ),
         leading: IconButton(
           onPressed: () => context.go('/home'),
           icon: const Icon(Icons.close_rounded, color: AppColors.primary),
@@ -48,10 +54,7 @@ class HaqDashboardScreen extends ConsumerWidget {
         child: Column(
           children: [
             // SECTION 1: HAQ Score Gauge
-            HaqGauge(
-              score: rights.haqScore,
-              reasoning: rights.haqReasoning,
-            )
+            HaqGauge(score: rights.haqScore, reasoning: rights.haqReasoning)
                 .animate()
                 .fadeIn(duration: 600.ms)
                 .scale(begin: const Offset(0.8, 0.8)),
@@ -93,44 +96,55 @@ class HaqDashboardScreen extends ConsumerWidget {
 
             // SECTION 5: Action Buttons
             Column(
-              children: [
-                SizedBox(
-                  width: double.infinity,
-                  height: 56,
-                  child: ElevatedButton(
-                    onPressed: () => context.push('/complaint'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primary,
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12)),
-                    ),
-                    child: Text("${draft?.actionLabel ?? 'Complaint'} File Karen",
-                        style: const TextStyle(
-                            fontSize: 16, fontWeight: FontWeight.bold)),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                SizedBox(
-                  width: double.infinity,
-                  height: 56,
-                  child: OutlinedButton(
-                    onPressed: () => context.push('/complaint'),
-                    style: OutlinedButton.styleFrom(
-                      side:
-                          const BorderSide(color: AppColors.primary, width: 2),
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12)),
-                    ),
-                    child: const Text("Draft Dekhein",
-                        style: TextStyle(
+                  children: [
+                    SizedBox(
+                      width: double.infinity,
+                      height: 56,
+                      child: ElevatedButton(
+                        onPressed: () => context.push('/complaint'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.primary,
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        child: Text(
+                          "${draft?.actionLabel ?? 'Complaint'} File Karen",
+                          style: const TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
-                            color: AppColors.primary)),
-                  ),
-                ),
-              ],
-            )
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    SizedBox(
+                      width: double.infinity,
+                      height: 56,
+                      child: OutlinedButton(
+                        onPressed: () => context.push('/complaint'),
+                        style: OutlinedButton.styleFrom(
+                          side: const BorderSide(
+                            color: AppColors.primary,
+                            width: 2,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        child: const Text(
+                          "Draft Dekhein",
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.primary,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                )
                 .animate()
                 .fadeIn(delay: 400.ms, duration: 600.ms)
                 .slideY(begin: 0.1, end: 0),
@@ -142,7 +156,7 @@ class HaqDashboardScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildImpactCard(dynamic rights) {
+  Widget _buildImpactCard(RightsAnalysis rights) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(16),
@@ -154,9 +168,13 @@ class HaqDashboardScreen extends ConsumerWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text("Impact Analysis",
-              style: AppTextStyles.title
-                  .copyWith(fontSize: 14, color: AppColors.primary)),
+          Text(
+            "Impact Analysis",
+            style: AppTextStyles.title.copyWith(
+              fontSize: 14,
+              color: AppColors.primary,
+            ),
+          ),
           const SizedBox(height: 8),
           Text(
             "Agar aap abhi action na len to Rs. ${rights.amountOwed.toStringAsFixed(0)} ka nuqsan ho sakta hai. "
@@ -168,7 +186,7 @@ class HaqDashboardScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildDetailCard(dynamic doc, dynamic rights) {
+  Widget _buildDetailCard(DocumentEntity doc, RightsAnalysis rights) {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -185,34 +203,40 @@ class HaqDashboardScreen extends ConsumerWidget {
       child: Column(
         children: [
           _Row(
-              icon: Icons.description_outlined,
-              label: "Document",
-              value: doc.type.displayName),
+            icon: Icons.description_outlined,
+            label: "Document",
+            value: documentTypeDisplayName(doc.type),
+          ),
           _Row(
-              icon: Icons.account_balance_outlined,
-              label: "Authority",
-              value: doc.authority),
+            icon: Icons.account_balance_outlined,
+            label: "Authority",
+            value: doc.authority,
+          ),
           _Row(
-              icon: Icons.gavel_outlined,
-              label: "Violation",
-              value: rights.violationType),
+            icon: Icons.gavel_outlined,
+            label: "Violation",
+            value: rights.violationType,
+          ),
           _Row(
-              icon: Icons.article_outlined,
-              label: "Legal Basis",
-              value: rights.legalBasis,
-              isSmall: true),
+            icon: Icons.article_outlined,
+            label: "Legal Basis",
+            value: rights.legalBasis,
+            isSmall: true,
+          ),
           const Padding(
             padding: EdgeInsets.symmetric(vertical: 16),
             child: Divider(height: 1),
           ),
           _Row(
-              icon: Icons.money_off_rounded,
-              label: "Max Allowed",
-              value: "Rs. ${rights.maxAllowed.toStringAsFixed(0)}"),
+            icon: Icons.money_off_rounded,
+            label: "Max Allowed",
+            value: "Rs. ${rights.maxAllowed.toStringAsFixed(0)}",
+          ),
           _Row(
-              icon: Icons.request_quote_outlined,
-              label: "Billed",
-              value: "Rs. ${rights.actualCharged.toStringAsFixed(0)}"),
+            icon: Icons.request_quote_outlined,
+            label: "Billed",
+            value: "Rs. ${rights.actualCharged.toStringAsFixed(0)}",
+          ),
           const SizedBox(height: 12),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -223,13 +247,19 @@ class HaqDashboardScreen extends ConsumerWidget {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text("Aapko mila:",
-                    style: TextStyle(
-                        fontWeight: FontWeight.bold, color: AppColors.primary)),
+                const Text(
+                  "Aapko mila:",
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.primary,
+                  ),
+                ),
                 Text(
                   "Rs. ${rights.amountOwed.toStringAsFixed(0)}",
-                  style: AppTextStyles.headline
-                      .copyWith(color: AppColors.primary, fontSize: 18),
+                  style: AppTextStyles.headline.copyWith(
+                    color: AppColors.primary,
+                    fontSize: 18,
+                  ),
                 ),
               ],
             ),
@@ -239,61 +269,75 @@ class HaqDashboardScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildDeadlineCard(dynamic deadline) {
+  Widget _buildDeadlineCard(DeadlineAlert deadline) {
     final isGhost = deadline.isHidden == true;
     return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.urgent, width: 2),
-      ),
-      child: Row(
-        children: [
-          const Icon(Icons.warning_amber_rounded,
-                  color: AppColors.urgent, size: 32)
-              .animate(onPlay: (c) => c.repeat(reverse: true))
-              .scale(begin: const Offset(1, 1), end: const Offset(1.2, 1.2)),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                if (isGhost)
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 6),
-                    child: Text(
-                      "Ghost Deadline Detector",
-                      style: AppTextStyles.caption.copyWith(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: AppColors.urgent, width: 2),
+          ),
+          child: Row(
+            children: [
+              const Icon(
+                    Icons.warning_amber_rounded,
+                    color: AppColors.urgent,
+                    size: 32,
+                  )
+                  .animate(onPlay: (c) => c.repeat(reverse: true))
+                  .scale(
+                    begin: const Offset(1, 1),
+                    end: const Offset(1.2, 1.2),
+                  ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (isGhost)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 6),
+                        child: Text(
+                          "Ghost Deadline Detector",
+                          style: AppTextStyles.caption.copyWith(
+                            color: AppColors.urgent,
+                            fontWeight: FontWeight.bold,
+                            letterSpacing: 0.3,
+                          ),
+                        ),
+                      ),
+                    Text(
+                      isGhost
+                          ? "⚠️ Chhupi hui deadline: ${deadline.label}"
+                          : "⚠️ ${deadline.daysRemaining} din baaki hain",
+                      style: AppTextStyles.title.copyWith(
                         color: AppColors.urgent,
+                        fontSize: 16,
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 4),
+                    _CountdownWidget(daysRemaining: deadline.daysRemaining),
+                    const SizedBox(height: 4),
+                    Text(
+                      isGhost
+                          ? "Fine print / footnote mein mili — fauran action len"
+                          : "Fauran action len",
+                      style: const TextStyle(
                         fontWeight: FontWeight.bold,
-                        letterSpacing: 0.3,
+                        color: AppColors.urgent,
                       ),
                     ),
-                  ),
-                Text(
-                  isGhost
-                      ? "⚠️ Chhupi hui deadline: ${deadline.label}"
-                      : "⚠️ ${deadline.daysRemaining} din baaki hain",
-                  style: AppTextStyles.title
-                      .copyWith(color: AppColors.urgent, fontSize: 16),
+                  ],
                 ),
-                const SizedBox(height: 4),
-                _CountdownWidget(daysRemaining: deadline.daysRemaining as int),
-                const SizedBox(height: 4),
-                Text(
-                  isGhost
-                      ? "Fine print / footnote mein mili — fauran action len"
-                      : "Fauran action len",
-                  style: const TextStyle(
-                      fontWeight: FontWeight.bold, color: AppColors.urgent),
-                ),
-              ],
-            ),
+              ),
+            ],
           ),
-        ],
-      ),
-    ).animate(onPlay: (c) => c.repeat(reverse: true)).custom(
+        )
+        .animate(onPlay: (c) => c.repeat(reverse: true))
+        .custom(
           duration: 2.seconds,
           builder: (context, value, child) => Container(
             decoration: BoxDecoration(
@@ -311,7 +355,10 @@ class HaqDashboardScreen extends ConsumerWidget {
   }
 
   Widget _buildCollectiveActionBanner(
-      WidgetRef ref, dynamic cluster, BuildContext context) {
+    WidgetRef ref,
+    CollectiveCluster cluster,
+    BuildContext context,
+  ) {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -325,9 +372,14 @@ class HaqDashboardScreen extends ConsumerWidget {
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: const BoxDecoration(
-                    color: Colors.white, shape: BoxShape.circle),
-                child: const Icon(Icons.handshake_rounded,
-                    color: AppColors.primary, size: 24),
+                  color: Colors.white,
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.handshake_rounded,
+                  color: AppColors.primary,
+                  size: 24,
+                ),
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -336,13 +388,16 @@ class HaqDashboardScreen extends ConsumerWidget {
                   children: [
                     Text(
                       "${cluster.count} logon ne same issue face kiya",
-                      style: AppTextStyles.title
-                          .copyWith(color: AppColors.primary, fontSize: 16),
+                      style: AppTextStyles.title.copyWith(
+                        color: AppColors.primary,
+                        fontSize: 16,
+                      ),
                     ),
                     Text(
                       "Mil kar file karen — zyada asar hoga",
                       style: AppTextStyles.caption.copyWith(
-                          color: AppColors.primary.withValues(alpha: 0.8)),
+                        color: AppColors.primary.withValues(alpha: 0.8),
+                      ),
                     ),
                   ],
                 ),
@@ -394,11 +449,12 @@ class _Row extends StatelessWidget {
   final String value;
   final bool isSmall;
 
-  const _Row(
-      {required this.icon,
-      required this.label,
-      required this.value,
-      this.isSmall = false});
+  const _Row({
+    required this.icon,
+    required this.label,
+    required this.value,
+    this.isSmall = false,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -408,18 +464,25 @@ class _Row extends StatelessWidget {
         children: [
           Icon(icon, size: 18, color: AppColors.textSecondary),
           const SizedBox(width: 12),
-          Text(label,
-              style: AppTextStyles.caption
-                  .copyWith(color: AppColors.textSecondary)),
+          Text(
+            label,
+            style: AppTextStyles.caption.copyWith(
+              color: AppColors.textSecondary,
+            ),
+          ),
           const Spacer(),
           Flexible(
             child: Text(
               value,
               style: isSmall
-                  ? AppTextStyles.caption
-                      .copyWith(fontWeight: FontWeight.bold, fontSize: 12)
-                  : AppTextStyles.title
-                      .copyWith(fontSize: 14, color: AppColors.primary),
+                  ? AppTextStyles.caption.copyWith(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 12,
+                    )
+                  : AppTextStyles.title.copyWith(
+                      fontSize: 14,
+                      color: AppColors.primary,
+                    ),
               textAlign: TextAlign.right,
               overflow: TextOverflow.ellipsis,
             ),
@@ -472,9 +535,10 @@ class _CountdownWidgetState extends State<_CountdownWidget> {
     return Text(
       "${days}d : ${hours}h : ${minutes}m : ${seconds}s",
       style: const TextStyle(
-          fontFamily: 'monospace',
-          fontWeight: FontWeight.bold,
-          color: AppColors.urgent),
+        fontFamily: 'monospace',
+        fontWeight: FontWeight.bold,
+        color: AppColors.urgent,
+      ),
     );
   }
 }

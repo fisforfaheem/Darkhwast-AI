@@ -27,6 +27,10 @@ class PipelineState {
   /// The user's selected intent (set after intent selection screen).
   final UserIntentSelection? userIntent;
 
+  /// Stored for pipeline retry after errors.
+  final String? sourceImagePath;
+  final String? sourceExtractedText;
+
   PipelineState({
     required this.docIntel,
     required this.urgency,
@@ -41,6 +45,8 @@ class PipelineState {
     this.collectiveJoined = false,
     this.executionMode,
     this.userIntent,
+    this.sourceImagePath,
+    this.sourceExtractedText,
   });
 
   factory PipelineState.initial() {
@@ -70,6 +76,8 @@ class PipelineState {
     bool? collectiveJoined,
     String? executionMode,
     UserIntentSelection? userIntent,
+    String? sourceImagePath,
+    String? sourceExtractedText,
   }) {
     return PipelineState(
       docIntel: docIntel ?? this.docIntel,
@@ -85,6 +93,8 @@ class PipelineState {
       collectiveJoined: collectiveJoined ?? this.collectiveJoined,
       executionMode: executionMode ?? this.executionMode,
       userIntent: userIntent ?? this.userIntent,
+      sourceImagePath: sourceImagePath ?? this.sourceImagePath,
+      sourceExtractedText: sourceExtractedText ?? this.sourceExtractedText,
     );
   }
 

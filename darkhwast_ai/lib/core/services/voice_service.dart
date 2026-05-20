@@ -3,6 +3,7 @@ import 'package:speech_to_text/speech_recognition_result.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
 
 typedef VoiceResultCallback = void Function(String text, bool isFinal);
+typedef VoiceStatusCallback = void Function(String status);
 
 /// Speech-to-text with locale selection and clear error reporting.
 class VoiceService {
@@ -11,6 +12,7 @@ class VoiceService {
   bool _initialized = false;
   String? _lastError;
   String? _localeId;
+  VoiceStatusCallback? onStatus;
 
   bool get isAvailable => _initialized;
   String? get lastError => _lastError;
@@ -20,7 +22,10 @@ class VoiceService {
     _lastError = null;
     try {
       _initialized = await _speech.initialize(
-        onStatus: (status) => debugPrint('Speech status: $status'),
+        onStatus: (status) {
+          debugPrint('Speech status: $status');
+          onStatus?.call(status);
+        },
         onError: (error) {
           _lastError = error.errorMsg;
           debugPrint('Speech error: ${error.errorMsg}');
@@ -56,32 +61,60 @@ class VoiceService {
 
     _lastError = null;
 
-    final started = await _speech.listen(
-      onResult: (SpeechRecognitionResult result) {
-        onResult(result.recognizedWords, result.finalResult);
-      },
-      localeId: _localeId,
-      listenFor: const Duration(seconds: 45),
-      pauseFor: const Duration(seconds: 4),
-      listenOptions: stt.SpeechListenOptions(
-        partialResults: true,
-        cancelOnError: false,
-        listenMode: stt.ListenMode.confirmation,
-      ),
-    );
+    if (_speech.isListening) {
+      await stopListening();
+    }
 
+    try {
+      await _speech.listen(
+        onResult: (SpeechRecognitionResult result) {
+          onResult(result.recognizedWords, result.finalResult);
+        },
+        localeId: _localeId,
+        listenFor: const Duration(seconds: 45),
+        pauseFor: const Duration(seconds: 3),
+        listenOptions: stt.SpeechListenOptions(
+          partialResults: true,
+          cancelOnError: false,
+          listenMode: stt.ListenMode.dictation,
+        ),
+      );
+    } catch (e) {
+      _lastError = e.toString();
+      return false;
+    }
+
+    await Future<void>.delayed(const Duration(milliseconds: 350));
+    final started = _speech.isListening;
     if (!started) {
-      _lastError = 'Could not start microphone. Check app permissions.';
+      _lastError ??= 'Could not start microphone. Check app permissions.';
     }
     return started;
   }
 
   Future<String?> stopListening() async {
-    await _speech.stop();
-    return _speech.lastRecognizedWords;
+    try {
+      await _speech.stop().timeout(
+        const Duration(seconds: 4),
+        onTimeout: () {
+          debugPrint('Speech stop timed out — cancelling session');
+        },
+      );
+    } catch (e) {
+      debugPrint('Speech stop error: $e');
+      try {
+        await _speech.cancel();
+      } catch (_) {}
+    }
+    final words = _speech.lastRecognizedWords;
+    return words.isEmpty ? null : words;
   }
 
   Future<void> cancel() async {
-    await _speech.cancel();
+    try {
+      await _speech.cancel();
+    } catch (e) {
+      debugPrint('Speech cancel error: $e');
+    }
   }
 }

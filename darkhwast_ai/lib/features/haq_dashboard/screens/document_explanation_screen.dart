@@ -4,7 +4,11 @@ import 'package:go_router/go_router.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../../../core/constants/colors.dart';
 import '../../../core/constants/text_styles.dart';
+import '../../../core/models/complaint_draft.dart';
+import '../../../core/models/document_entity.dart';
+import '../../../core/models/rights_analysis.dart';
 import '../../agent_trace/providers/agent_pipeline_provider.dart';
+import '../../../shared/widgets/pipeline_data_error.dart';
 
 /// Screen shown when user picks "Document Samjhein" (Explain Document) intent.
 /// Displays the document explanation without HAQ Score or complaint filing.
@@ -18,9 +22,8 @@ class DocumentExplanationScreen extends ConsumerWidget {
     final draft = ref.watch(complaintDraftProvider);
 
     if (doc == null) {
-      return const Scaffold(
-        backgroundColor: AppColors.background,
-        body: Center(child: CircularProgressIndicator(color: AppColors.primary)),
+      return const PipelineDataError(
+        message: 'Document explanation load nahi hui.',
       );
     }
 
@@ -29,8 +32,10 @@ class DocumentExplanationScreen extends ConsumerWidget {
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        title: Text("Document Samjhein",
-            style: AppTextStyles.title.copyWith(color: AppColors.primary)),
+        title: Text(
+          "Document Samjhein",
+          style: AppTextStyles.title.copyWith(color: AppColors.primary),
+        ),
         leading: IconButton(
           onPressed: () => context.go('/home'),
           icon: const Icon(Icons.close_rounded, color: AppColors.primary),
@@ -42,21 +47,20 @@ class DocumentExplanationScreen extends ConsumerWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Document Type Header
-            _buildDocumentHeader(doc)
-                .animate()
-                .fadeIn(duration: 500.ms)
-                .slideY(begin: 0.05),
+            _buildDocumentHeader(
+              doc,
+            ).animate().fadeIn(duration: 500.ms).slideY(begin: 0.05),
 
             const SizedBox(height: 24),
 
             // Plain Language Explanation
             if (draft?.documentExplanation != null)
               _buildExplanationCard(
-                "Asaan Lafzon Mein",
-                draft!.documentExplanation!,
-                Icons.lightbulb_outline_rounded,
-                AppColors.accent,
-              )
+                    "Asaan Lafzon Mein",
+                    draft!.documentExplanation!,
+                    Icons.lightbulb_outline_rounded,
+                    AppColors.accent,
+                  )
                   .animate()
                   .fadeIn(delay: 100.ms, duration: 500.ms)
                   .slideY(begin: 0.05),
@@ -101,9 +105,9 @@ class DocumentExplanationScreen extends ConsumerWidget {
 
             // Detailed Explanation (Urdu + English tabs)
             if (draft != null)
-              _buildDetailedExplanation(draft)
-                  .animate()
-                  .fadeIn(delay: 600.ms, duration: 500.ms),
+              _buildDetailedExplanation(
+                draft,
+              ).animate().fadeIn(delay: 600.ms, duration: 500.ms),
 
             const SizedBox(height: 32),
 
@@ -120,7 +124,7 @@ class DocumentExplanationScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildDocumentHeader(dynamic doc) {
+  Widget _buildDocumentHeader(DocumentEntity doc) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(20),
@@ -141,8 +145,11 @@ class DocumentExplanationScreen extends ConsumerWidget {
               color: Colors.white.withValues(alpha: 0.15),
               borderRadius: BorderRadius.circular(12),
             ),
-            child: const Icon(Icons.description_rounded,
-                color: Colors.white, size: 28),
+            child: const Icon(
+              Icons.description_rounded,
+              color: Colors.white,
+              size: 28,
+            ),
           ),
           const SizedBox(width: 16),
           Expanded(
@@ -150,21 +157,27 @@ class DocumentExplanationScreen extends ConsumerWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  doc.type.displayName,
-                  style: AppTextStyles.headline
-                      .copyWith(color: Colors.white, fontSize: 18),
+                  documentTypeDisplayName(doc.type),
+                  style: AppTextStyles.headline.copyWith(
+                    color: Colors.white,
+                    fontSize: 18,
+                  ),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   "From: ${doc.authority}",
-                  style: AppTextStyles.body
-                      .copyWith(color: Colors.white70, fontSize: 14),
+                  style: AppTextStyles.body.copyWith(
+                    color: Colors.white70,
+                    fontSize: 14,
+                  ),
                 ),
                 if (doc.consumerRef != null)
                   Text(
                     "Ref: ${doc.consumerRef}",
-                    style: AppTextStyles.caption
-                        .copyWith(color: Colors.white54, fontSize: 12),
+                    style: AppTextStyles.caption.copyWith(
+                      color: Colors.white54,
+                      fontSize: 12,
+                    ),
                   ),
               ],
             ),
@@ -175,7 +188,11 @@ class DocumentExplanationScreen extends ConsumerWidget {
   }
 
   Widget _buildExplanationCard(
-      String title, String content, IconData icon, Color accentColor) {
+    String title,
+    String content,
+    IconData icon,
+    Color accentColor,
+  ) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(20),
@@ -193,16 +210,17 @@ class DocumentExplanationScreen extends ConsumerWidget {
               const SizedBox(width: 8),
               Text(
                 title,
-                style: AppTextStyles.title
-                    .copyWith(fontSize: 16, color: AppColors.primary),
+                style: AppTextStyles.title.copyWith(
+                  fontSize: 16,
+                  color: AppColors.primary,
+                ),
               ),
             ],
           ),
           const SizedBox(height: 12),
           Text(
             content,
-            style:
-                AppTextStyles.body.copyWith(fontSize: 15, height: 1.5),
+            style: AppTextStyles.body.copyWith(fontSize: 15, height: 1.5),
           ),
         ],
       ),
@@ -229,39 +247,48 @@ class DocumentExplanationScreen extends ConsumerWidget {
         children: [
           Row(
             children: [
-              const Icon(Icons.fact_check_rounded,
-                  color: AppColors.primary, size: 20),
+              const Icon(
+                Icons.fact_check_rounded,
+                color: AppColors.primary,
+                size: 20,
+              ),
               const SizedBox(width: 8),
-              Text("Key Facts",
-                  style: AppTextStyles.title
-                      .copyWith(fontSize: 16, color: AppColors.primary)),
+              Text(
+                "Key Facts",
+                style: AppTextStyles.title.copyWith(
+                  fontSize: 16,
+                  color: AppColors.primary,
+                ),
+              ),
             ],
           ),
           const SizedBox(height: 12),
-          ...facts.map((fact) => Padding(
-                padding: const EdgeInsets.only(bottom: 8),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Container(
-                      margin: const EdgeInsets.only(top: 6),
-                      width: 6,
-                      height: 6,
-                      decoration: const BoxDecoration(
-                        color: AppColors.accent,
-                        shape: BoxShape.circle,
-                      ),
+          ...facts.map(
+            (fact) => Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    margin: const EdgeInsets.only(top: 6),
+                    width: 6,
+                    height: 6,
+                    decoration: const BoxDecoration(
+                      color: AppColors.accent,
+                      shape: BoxShape.circle,
                     ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Text(
-                        fact,
-                        style: AppTextStyles.body.copyWith(fontSize: 14),
-                      ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      fact,
+                      style: AppTextStyles.body.copyWith(fontSize: 14),
                     ),
-                  ],
-                ),
-              )),
+                  ),
+                ],
+              ),
+            ),
+          ),
         ],
       ),
     );
@@ -287,36 +314,45 @@ class DocumentExplanationScreen extends ConsumerWidget {
         children: [
           Row(
             children: [
-              const Icon(Icons.payments_rounded,
-                  color: AppColors.primary, size: 20),
+              const Icon(
+                Icons.payments_rounded,
+                color: AppColors.primary,
+                size: 20,
+              ),
               const SizedBox(width: 8),
-              Text("Charges / Amounts",
-                  style: AppTextStyles.title
-                      .copyWith(fontSize: 16, color: AppColors.primary)),
+              Text(
+                "Charges / Amounts",
+                style: AppTextStyles.title.copyWith(
+                  fontSize: 16,
+                  color: AppColors.primary,
+                ),
+              ),
             ],
           ),
           const SizedBox(height: 12),
-          ...amounts.map((a) => Padding(
-                padding: const EdgeInsets.only(bottom: 8),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Flexible(
-                      child: Text(
-                        a['label'] ?? 'Charge',
-                        style: AppTextStyles.body.copyWith(fontSize: 14),
-                      ),
+          ...amounts.map(
+            (a) => Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Flexible(
+                    child: Text(
+                      a['label'] ?? 'Charge',
+                      style: AppTextStyles.body.copyWith(fontSize: 14),
                     ),
-                    Text(
-                      "Rs. ${a['amount'] ?? 0}",
-                      style: AppTextStyles.title.copyWith(
-                        fontSize: 14,
-                        color: AppColors.primary,
-                      ),
+                  ),
+                  Text(
+                    "Rs. ${a['amount'] ?? 0}",
+                    style: AppTextStyles.title.copyWith(
+                      fontSize: 14,
+                      color: AppColors.primary,
                     ),
-                  ],
-                ),
-              )),
+                  ),
+                ],
+              ),
+            ),
+          ),
         ],
       ),
     );
@@ -342,42 +378,51 @@ class DocumentExplanationScreen extends ConsumerWidget {
         children: [
           Row(
             children: [
-              const Icon(Icons.calendar_today_rounded,
-                  color: AppColors.primary, size: 20),
+              const Icon(
+                Icons.calendar_today_rounded,
+                color: AppColors.primary,
+                size: 20,
+              ),
               const SizedBox(width: 8),
-              Text("Important Dates",
-                  style: AppTextStyles.title
-                      .copyWith(fontSize: 16, color: AppColors.primary)),
+              Text(
+                "Important Dates",
+                style: AppTextStyles.title.copyWith(
+                  fontSize: 16,
+                  color: AppColors.primary,
+                ),
+              ),
             ],
           ),
           const SizedBox(height: 12),
-          ...dates.map((d) => Padding(
-                padding: const EdgeInsets.only(bottom: 8),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Flexible(
-                      child: Text(
-                        d['label'] ?? 'Date',
-                        style: AppTextStyles.body.copyWith(fontSize: 14),
-                      ),
+          ...dates.map(
+            (d) => Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Flexible(
+                    child: Text(
+                      d['label'] ?? 'Date',
+                      style: AppTextStyles.body.copyWith(fontSize: 14),
                     ),
-                    Text(
-                      d['date'] ?? 'N/A',
-                      style: AppTextStyles.caption.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.primary,
-                      ),
+                  ),
+                  Text(
+                    d['date'] ?? 'N/A',
+                    style: AppTextStyles.caption.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.primary,
                     ),
-                  ],
-                ),
-              )),
+                  ),
+                ],
+              ),
+            ),
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildIssueCard(dynamic rights) {
+  Widget _buildIssueCard(RightsAnalysis rights) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(20),
@@ -391,12 +436,19 @@ class DocumentExplanationScreen extends ConsumerWidget {
         children: [
           Row(
             children: [
-              const Icon(Icons.warning_amber_rounded,
-                  color: AppColors.urgent, size: 22),
+              const Icon(
+                Icons.warning_amber_rounded,
+                color: AppColors.urgent,
+                size: 22,
+              ),
               const SizedBox(width: 8),
-              Text("Issue Detected",
-                  style: AppTextStyles.title
-                      .copyWith(fontSize: 16, color: AppColors.urgent)),
+              Text(
+                "Issue Detected",
+                style: AppTextStyles.title.copyWith(
+                  fontSize: 16,
+                  color: AppColors.urgent,
+                ),
+              ),
             ],
           ),
           const SizedBox(height: 12),
@@ -420,7 +472,7 @@ class DocumentExplanationScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildDetailedExplanation(dynamic draft) {
+  Widget _buildDetailedExplanation(ActionDraft draft) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(20),
@@ -440,12 +492,19 @@ class DocumentExplanationScreen extends ConsumerWidget {
         children: [
           Row(
             children: [
-              const Icon(Icons.menu_book_rounded,
-                  color: AppColors.primary, size: 20),
+              const Icon(
+                Icons.menu_book_rounded,
+                color: AppColors.primary,
+                size: 20,
+              ),
               const SizedBox(width: 8),
-              Text("Full Explanation",
-                  style: AppTextStyles.title
-                      .copyWith(fontSize: 16, color: AppColors.primary)),
+              Text(
+                "Full Explanation",
+                style: AppTextStyles.title.copyWith(
+                  fontSize: 16,
+                  color: AppColors.primary,
+                ),
+              ),
             ],
           ),
           const SizedBox(height: 16),
@@ -458,7 +517,7 @@ class DocumentExplanationScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildActionButtons(BuildContext context, dynamic rights) {
+  Widget _buildActionButtons(BuildContext context, RightsAnalysis? rights) {
     return Column(
       children: [
         if (rights != null && rights.violationDetected) ...[
@@ -476,7 +535,8 @@ class DocumentExplanationScreen extends ConsumerWidget {
                 backgroundColor: AppColors.primary,
                 foregroundColor: Colors.white,
                 shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12)),
+                  borderRadius: BorderRadius.circular(12),
+                ),
               ),
             ),
           ),
@@ -496,7 +556,8 @@ class DocumentExplanationScreen extends ConsumerWidget {
               side: const BorderSide(color: AppColors.primary, width: 2),
               foregroundColor: AppColors.primary,
               shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12)),
+                borderRadius: BorderRadius.circular(12),
+              ),
             ),
           ),
         ),

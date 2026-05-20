@@ -1,35 +1,69 @@
-# Technical Walkthrough & Verification — DarkhwastAI
+# Judge walkthrough — DarkhwastAI (90 seconds per scenario)
 
-This document provides a technical walkthrough of the core features and verification states for DarkhwastAI.
+APK builds ship **without** a bundled Gemini API key. First launch asks: **Curated Demo** (default) or **your own key** (device-only).
 
-## 1. Feature Walkthrough
+## Quick start (judges)
 
-### 1.1 Document Scan & OCR Processing
-Upon uploading or capturing a government document, the app passes the file to `google_mlkit_text_recognition`. Once the raw OCR text is extracted, the **Document Intelligence Agent** (Agent 1) processes it via Gemini (or local mock services in Demo Mode) to populate the structured `DocumentEntity` model.
-
-### 1.2 The Sequential Live Agent Trace
-The **Live Agent Trace Screen** subscribes to Riverpod's `pipelineProvider`. It sequentially executes the 5 agents with a 1.5-second pacing:
-1. **Document Intelligence:** Extracts document type, references, and amounts.
-2. **Urgency Detector:** Scans for obscure deadline markers.
-3. **Rights Intelligence:** Compares billed values with approved slabs from Firestore laws and computes the **HAQ Score**.
-4. **Action Drafter:** Drafts the legal complaint.
-5. **Collective Pattern:** Checks for systemic overcharge clusters in the same zip code.
-
-### 1.3 HAQ Score & Details Dashboard
-The **HAQ Dashboard** displays:
-- A dynamic radial gauge indicating the legal case strength (0-100).
-- Information boxes detailing the violation and legal basis.
-- The precise amount of refund owed to the customer.
-- Systemic collective action options if matching clusters are found in the area.
-
-### 1.4 Bilingual Complaint & Automated Filing Simulation
-The citizen reviews the complaint in formal English or beautiful Nastaliq Urdu (rendered RTL). Tapping **File Complaint** triggers a filing sequence representing a portal upload, culminating in a Case Reference ID (e.g. `DW-2026-ISB-XXXX`) and timeline updates.
+1. Open app → **Continue with Demo**
+2. Home → **Curated demo chunain**
+3. Pick a scenario → demo runs automatically through the 5-agent pipeline
+4. Choose intent (e.g. **Complaint likhein** or **Document samjhein**)
+5. HAQ dashboard → complaint draft → filing simulation → confirmation (see [`complaint_filing_workflow.md`](complaint_filing_workflow.md) for technical detail)
+6. About → **Agent log share karen** (Antigravity JSON)
 
 ---
 
-## 2. In-App Validation & Logs
-Judges can audit the entire agent reasoning sequence:
-- Navigate to **About** -> Tap logo 5x to access Demo scenarios.
-- Run any scenario.
-- Tap **Agent Trace Dekhein** on the About screen or expand a case in the Tracker to audit step-by-step reasoning outputs.
-- Share or copy the complete JSON trace matching the `trace_format: antigravity_agent_v1` specification.
+## Scenario A — IESCO FCA (flagship, ~90s)
+
+**Hook:** HAQ 81, Rs 1,600 refund, **29 collective cases**
+
+| Step | Action | Point out |
+|------|--------|-----------|
+| 1 | Curated demo → **IESCO Bijli Bill** | Pre-loaded OCR, no camera needed |
+| 2 | Watch Agent 1–2 | Document + urgency (6 days, monitor) |
+| 3 | Intent → **Complaint likhein** | User steering |
+| 4 | Agents 3–5 | HAQ score, bilingual draft, collective cluster |
+| 5 | HAQ gauge | Rs 1,600 owed, NEPRA basis |
+| 6 | Urdu draft tab | Formal IESCO/NEPRA letter |
+| 7 | Share agent log | `trace_format: antigravity_agent_v1` |
+
+---
+
+## Scenario B — FBR Ghost deadline (~90s)
+
+**Hook:** Hidden **4-day** deadline in footnote — Agent 2 URGENT
+
+| Step | Action | Point out |
+|------|--------|-----------|
+| 1 | Pick **FBR Tax Notice** | Ghost Deadline Detector |
+| 2 | Agent 2 card | Amber urgent + hidden deadline message |
+| 3 | Intent → **Write Appeal** or **Find Issues** | |
+| 4 | HAQ dashboard | Lower score (55), dispute Rs 75,000 |
+
+---
+
+## Scenario C — BISP appeal (~90s)
+
+**Hook:** Procedural unfairness, appeal rights, HAQ 75
+
+| Step | Action | Point out |
+|------|--------|-----------|
+| 1 | Pick **BISP Status Letter** | Rejection → appeal path |
+| 2 | Intent → **Document samjhein** | Explain-only flow |
+| 3 | Document explanation screen | Plain Urdu/English |
+
+---
+
+## Developers (local live AI)
+
+- Copy `.env.example` to `darkhwast_ai/.env` with `GEMINI_API_KEY` (debug builds read `File('.env')` from project root)
+- Or use **My key** in About after first launch
+- Never commit `.env`; release APKs use demo or user-provided keys only
+
+---
+
+## In-app validation
+
+- **About → AI mode:** Curated Demo vs My key
+- **About → Curated demo scenarios:** Full picker
+- **About → Agent trace / Share log:** After any completed run

@@ -6,7 +6,7 @@ import '../models/collective_cluster.dart';
 import '../services/firebase_bootstrap.dart';
 import '../services/local_case_repository.dart';
 import '../services/firestore_service.dart';
-import 'demo_provider.dart';
+import 'shared_prefs_provider.dart';
 import 'firebase_providers.dart';
 import 'service_providers.dart';
 
@@ -22,7 +22,7 @@ class CaseListNotifier extends StateNotifier<List<CaseEntity>> {
   bool _cloudSyncActive = false;
 
   CaseListNotifier(this._local, this._firestore, this._firebaseReady)
-      : super([]) {
+    : super([]) {
     _cloudSyncActive = _firebaseReady && FirebaseBootstrap.cloudNetworkEnabled;
     if (_cloudSyncActive) {
       _subscribeFirestore();
@@ -68,12 +68,15 @@ class CaseListNotifier extends StateNotifier<List<CaseEntity>> {
   Future<void> loadCases() async {
     if (_firebaseReady) {
       try {
-        await FirebaseBootstrap.setCloudNetwork(true);
+        final online = await FirebaseBootstrap.tryEnableCloudNetwork();
+        if (!online) {
+          await _loadLocal();
+          return;
+        }
         _cloudSyncActive = true;
-        final snap = await _firestore
-            .getCases()
-            .first
-            .timeout(const Duration(seconds: 8));
+        final snap = await _firestore.getCases().first.timeout(
+          const Duration(seconds: 8),
+        );
         if (snap.isNotEmpty) {
           state = snap;
           if (_firestoreSub == null) _subscribeFirestore();
@@ -93,10 +96,7 @@ class CaseListNotifier extends StateNotifier<List<CaseEntity>> {
     bool joinedCollective = false,
   }) async {
     await _local.saveCase(caseData);
-    state = [
-      caseData,
-      ...state.where((c) => c.id != caseData.id),
-    ];
+    state = [caseData, ...state.where((c) => c.id != caseData.id)];
 
     if (_firebaseReady && _cloudSyncActive) {
       try {
@@ -124,12 +124,12 @@ class CaseListNotifier extends StateNotifier<List<CaseEntity>> {
 
 final caseListProvider =
     StateNotifierProvider<CaseListNotifier, List<CaseEntity>>((ref) {
-  return CaseListNotifier(
-    ref.watch(localCaseRepositoryProvider),
-    ref.watch(firestoreServiceProvider),
-    ref.watch(firebaseReadyProvider),
-  );
-});
+      return CaseListNotifier(
+        ref.watch(localCaseRepositoryProvider),
+        ref.watch(firestoreServiceProvider),
+        ref.watch(firebaseReadyProvider),
+      );
+    });
 
 /// Whether the user chose collective action on the HAQ dashboard.
 final joinCollectiveProvider = StateProvider<bool>((ref) => false);

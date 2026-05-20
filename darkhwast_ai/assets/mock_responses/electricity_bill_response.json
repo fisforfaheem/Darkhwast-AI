@@ -4,19 +4,35 @@
     "authority": "IESCO",
     "consumerRef": "13 14115 0123456 U",
     "amounts": [
-      {"label": "Total Bill", "amount": 18500, "currency": "PKR"},
-      {"label": "FCA Charges", "amount": 3800, "currency": "PKR"}
+      {
+        "label": "Total Bill",
+        "amount": 18500,
+        "currency": "PKR"
+      },
+      {
+        "label": "FCA Charges",
+        "amount": 3800,
+        "currency": "PKR"
+      }
     ],
     "dates": [
-      {"label": "Due Date", "date": "2026-05-20"}
+      {
+        "label": "Due Date",
+        "date": "2026-05-20"
+      }
     ],
     "deadlines": [
-      {"label": "Payment Deadline", "date": "2026-05-20", "daysRemaining": 6, "isHidden": false}
+      {
+        "label": "Payment Deadline",
+        "date": "2026-05-20",
+        "daysRemaining": 6,
+        "isHidden": false
+      }
     ],
     "keyFacts": [
       "IESCO Electricity Bill detected",
       "Consumption: 450 units (Slab B2)",
-      "Rs. 3,800 FCA charge extracted"
+      "Rs. 3,800 FCA charge extracted — Rs. 1,600 above NEPRA slab cap"
     ]
   },
   "rightsAnalysis": {
@@ -31,10 +47,45 @@
     "confidenceLevel": "HIGH"
   },
   "complaintDraft": {
-    "urduDraft": "Bakhidmat Janab Manager, IESCO Islamabad.\n\nMoazziz Janab,\n\nMain aap ki tawajjo apne bijli ke bill (Ref: 13 14115 0123456 U) ki taraf mabzoool karwana chahta hoon. Is mahine ke bill mein FCA ki mad mein Rs. 3,800 charge kiye gaye hain, jabke NEPRA ke slab B2 rules ke mutabiq yeh Rs. 2,200 se zayada nahi hone chahiye thay. Lehaza, Rs. 1,600 ka izafi charge khatam kiya jaye aur mujhe refund diya jaye.\n\nShukriya,\nPakistani Shehri",
+    "urduDraft": "بخدمت جناب منیجر، آئی ایس ای سی او اسلام آباد۔\n\nمحترم جناب،\n\nمیں آپ کی توجہ اپنے بجلی کے بل (حوالہ: 13 14115 0123456 U) کی طرف مبذول کروانا چاہتا/چاہتی ہوں۔ اس ماہ کے بل میں ایندھن لاگت ایڈجسٹمنٹ (FCA) کی مد میں Rs. 3,800 چارج کیے گئے ہیں، جبکہ نیپرا کے سلاپ B2 کے قواعد کے مطابق یہ Rs. 2,200 سے زیادہ نہیں ہونے چاہیے تھے۔ لہٰذا، Rs. 1,600 کا اضافی چارج ختم کیا جائے اور مجھے ریفنڈ دیا جائے۔\n\nشکریہ،\nپاکستانی شہری",
     "englishDraft": "To the Manager, IESCO Islamabad.\n\nSubject: Formal Complaint regarding FCA Overcharge.\n\nI am writing to formally contest the Fuel Cost Adjustment (FCA) charges on my electricity bill (Ref: 13 14115 0123456 U). As per NEPRA QTA Circular May 2025, Section 4(b), the maximum allowed FCA for Slab B2 is Rs. 2,200, whereas I have been charged Rs. 3,800. I request an immediate refund of Rs. 1,600.\n\nRegards,\nCitizen of Pakistan",
     "subject": "FCA Overcharge Complaint - IESCO",
     "submissionAuthority": "IESCO / Citizens Portal",
+    "submissionPortal": "complaints.nepra.org.pk",
     "estimatedResponseDays": 14
+  },
+  "collectiveCluster": {
+    "id": "cluster_IESCO_FCA_ISB_May2026",
+    "authority": "IESCO",
+    "violationType": "FCA_Overcharge",
+    "area": "Islamabad",
+    "count": 29,
+    "status": "Open",
+    "collectivePetitionDrafted": true
+  },
+  "agentMessages": {
+    "docIntel": "IESCO bill scan complete — FCA Rs. 3,800 extracted, Slab B2, 450 units.",
+    "urgency": "Payment due in 6 days — not yet urgent; monitoring deadline.",
+    "rights": "NEPRA match: Rs. 1,600 overcharge confirmed. HAQ Score 81/100.",
+    "drafter": "Bilingual complaint drafted for IESCO / NEPRA portal.",
+    "pattern": "29 similar FCA cases in Islamabad — collective petition available."
+  },
+  "draftsByIntent": {
+    "explainDocument": {
+      "urduDraft": "یہ آپ کا آئی ایس ای سی او بجلی کا بل ہے۔ کل بل Rs. 18,500 ہے جس میں Rs. 3,800 FCA چارج شامل ہے۔ نیپرا کے مطابق سلاپ B2 پر FCA Rs. 2,200 سے زیادہ نہیں ہونا چاہیے تھا — آپ Rs. 1,600 واپس لے سکتے ہیں۔",
+      "englishDraft": "This is your IESCO electricity bill. Total Rs. 18,500 including Rs. 3,800 FCA. Under NEPRA Slab B2 rules the FCA should not exceed Rs. 2,200 — you may be owed Rs. 1,600.",
+      "subject": "IESCO Bill Explanation",
+      "submissionAuthority": "IESCO",
+      "submissionPortal": "consumer.iesco.com.pk",
+      "estimatedResponseDays": 7
+    },
+    "findIssues": {
+      "urduDraft": "مسائل کی رپورٹ: (1) FCA Rs. 3,800 بمقابلہ مجاز Rs. 2,200 — Rs. 1,600 اضافی چارج۔ (2) نیپرا QTA Circular May 2025 Section 4(b) کی خلاف ورزی۔ (3) تجویز: رسمی شکایت اور ریفنڈ کی درخواست۔",
+      "englishDraft": "Issue Report: FCA overcharge of Rs. 1,600 identified against NEPRA slab cap. Legal basis: NEPRA QTA Circular May 2025 Section 4(b). Recommended action: file complaint and request adjustment.",
+      "subject": "IESCO Bill — Issues Found",
+      "submissionAuthority": "IESCO",
+      "submissionPortal": "complaints.nepra.org.pk",
+      "estimatedResponseDays": 14
+    }
   }
 }

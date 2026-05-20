@@ -77,12 +77,19 @@ class _FilingScreenState extends ConsumerState<FilingScreen> {
 
             Text(
               isCollective
-                  ? "${cluster.count} logon ke saath file ho rahi hai..."
-                  : "Citizens Portal ko submit ho raha hai...",
+                  ? "${cluster.count} logon ke saath submission tayyar ho rahi hai..."
+                  : "Aap ki darkhwast tayyar ho rahi hai...",
               style: AppTextStyles.headline
                   .copyWith(color: Colors.white, fontSize: 20),
               textAlign: TextAlign.center,
             ).animate().fadeIn(duration: 800.ms),
+            const SizedBox(height: 8),
+            Text(
+              'Demo: portal integration simulated',
+              style: AppTextStyles.caption
+                  .copyWith(color: Colors.white38, fontSize: 12),
+              textAlign: TextAlign.center,
+            ),
 
             const SizedBox(height: 32),
 

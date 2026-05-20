@@ -1,6 +1,9 @@
+import 'dart:io';
+
+import 'package:flutter/foundation.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
-/// Runtime secrets and flags from `.env` (local) or `--dart-define` (CI).
+/// Runtime secrets: user secure storage > dart-define > dev .env (debug only).
 class AppEnv {
   AppEnv._();
 
@@ -8,28 +11,36 @@ class AppEnv {
 
   static String geminiApiKey = '';
 
-  /// Gemini API model id — see https://ai.google.dev/gemini-api/docs/models
   static String geminiModel = _defaultGeminiModel;
 
-  /// When true, GeminiService uses asset mocks (even if a key exists).
   static bool forceMock = false;
 
-  /// Default model; override with GEMINI_MODEL in .env if needed.
-  static const String _defaultGeminiModel = 'gemini-3.1-pro-preview';
+  static const String _defaultGeminiModel = 'gemini-1.5-flash';
 
-  /// Latest agentic preview (Feb 2026) — set GEMINI_MODEL to this for cutting-edge.
-  static const String latestAgenticModel = 'gemini-3.1-pro-preview';
+  static const String latestAgenticModel = 'gemini-1.5-flash';
 
-  static Future<void> load() async {
-    if (_loaded) return;
+  /// Call after [load]; updates key when user changes AI mode.
+  static Future<void> applyUserGeminiKey(String? key) async {
+    if (key != null && key.trim().isNotEmpty) {
+      geminiApiKey = key.trim();
+      return;
+    }
+    geminiApiKey = _resolve('GEMINI_API_KEY');
+  }
 
-    try {
-      await dotenv.load(fileName: '.env');
-    } catch (_) {
-      // Missing .env is fine — use dart-define or demo mode.
+  static Future<void> load({String? userGeminiKey}) async {
+    if (_loaded && userGeminiKey == null) return;
+
+    if (kDebugMode) {
+      await _ensureDotEnvLoaded();
     }
 
-    geminiApiKey = _resolve('GEMINI_API_KEY');
+    if (userGeminiKey != null && userGeminiKey.trim().isNotEmpty) {
+      geminiApiKey = userGeminiKey.trim();
+    } else {
+      geminiApiKey = _resolve('GEMINI_API_KEY');
+    }
+
     final model = _resolve('GEMINI_MODEL');
     geminiModel = model.isNotEmpty ? model : _defaultGeminiModel;
     final mockFlag = _resolve('USE_MOCK').toLowerCase();
@@ -38,9 +49,31 @@ class AppEnv {
     _loaded = true;
   }
 
+  /// Loads `.env` for local debug: project file (desktop) or asset (mobile).
+  static Future<void> _ensureDotEnvLoaded() async {
+    if (dotenv.isInitialized) return;
+
+    try {
+      final envFile = File('.env');
+      if (await envFile.exists()) {
+        final contents = await envFile.readAsString();
+        dotenv.loadFromString(envString: contents, isOptional: true);
+        return;
+      }
+    } catch (_) {}
+
+    try {
+      await dotenv.load(fileName: '.env', isOptional: true);
+      if (dotenv.isInitialized) return;
+    } catch (_) {}
+
+    dotenv.loadFromString(isOptional: true);
+  }
+
   static String _resolve(String key) {
     final fromDefine = String.fromEnvironment(key);
     if (fromDefine.isNotEmpty) return fromDefine;
+    if (!kDebugMode || !dotenv.isInitialized) return '';
     final raw = dotenv.env[key]?.trim() ?? '';
     if (raw.length >= 2 &&
         ((raw.startsWith('"') && raw.endsWith('"')) ||
@@ -52,6 +85,5 @@ class AppEnv {
 
   static bool get hasGeminiKey => geminiApiKey.isNotEmpty;
 
-  /// Real Gemini calls when demo mode is off and this is true.
   static bool get liveAiReady => hasGeminiKey && !forceMock;
 }

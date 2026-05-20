@@ -6,6 +6,8 @@ class TypewriterText extends StatefulWidget {
   final TextStyle? style;
   final Duration duration;
   final VoidCallback? onComplete;
+  final int? maxLines;
+  final TextOverflow overflow;
 
   const TypewriterText({
     super.key,
@@ -13,6 +15,8 @@ class TypewriterText extends StatefulWidget {
     this.style,
     this.duration = const Duration(milliseconds: 30),
     this.onComplete,
+    this.maxLines,
+    this.overflow = TextOverflow.ellipsis,
   });
 
   @override
@@ -42,6 +46,7 @@ class _TypewriterTextState extends State<TypewriterText> {
   }
 
   void _startTyping() {
+    if (widget.text.isEmpty) return;
     _timer = Timer.periodic(widget.duration, (timer) {
       if (_currentIndex < widget.text.length) {
         setState(() {
@@ -66,6 +71,9 @@ class _TypewriterTextState extends State<TypewriterText> {
     return Text(
       _displayedText,
       style: widget.style,
+      maxLines: widget.maxLines,
+      overflow: widget.overflow,
+      softWrap: true,
     );
   }
 }

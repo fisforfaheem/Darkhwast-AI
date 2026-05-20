@@ -10,8 +10,11 @@ import '../../../core/constants/colors.dart';
 import '../../../core/constants/text_styles.dart';
 import '../../../core/models/case_entity.dart';
 import '../../../core/models/complaint_draft.dart';
+import '../../../core/models/document_entity.dart';
+import '../../../core/models/rights_analysis.dart';
 import '../../../core/providers/case_providers.dart';
 import '../../agent_trace/providers/agent_pipeline_provider.dart';
+import '../../complaint/utils/email_composer.dart';
 
 class ConfirmationScreen extends ConsumerStatefulWidget {
   const ConfirmationScreen({super.key});
@@ -61,16 +64,53 @@ class _ConfirmationScreenState extends ConsumerState<ConfirmationScreen> {
       joinedCollective: joinedCollective,
     );
 
-    await ref.read(caseListProvider.notifier).addCase(
+    await ref
+        .read(caseListProvider.notifier)
+        .addCase(
           caseEntity,
           cluster: cluster,
           joinedCollective: joinedCollective,
         );
-    ref.read(pipelineProvider.notifier).setFilingMeta(
+    ref
+        .read(pipelineProvider.notifier)
+        .setFilingMeta(
           caseReference: _caseRef,
           collectiveJoined: joinedCollective,
         );
     if (mounted) setState(() => _caseSaved = true);
+  }
+
+  Future<void> _sendEmail(BuildContext context) async {
+    final draft = ref.read(complaintDraftProvider);
+    if (draft == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Email ke liye draft mojood nahi.')),
+      );
+      return;
+    }
+
+    final doc = ref.read(documentEntityProvider);
+    final rights = ref.read(rightsAnalysisProvider);
+    final cluster = ref.read(collectiveClusterProvider);
+    final joinedCollective = ref.read(joinCollectiveProvider);
+    final pipeline = ref.read(pipelineProvider);
+
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      await ComplaintEmailComposer.compose(
+        draft: draft,
+        doc: doc,
+        rights: rights,
+        cluster: cluster,
+        joinedCollective: joinedCollective,
+        caseReference: _caseRef,
+        sourceImagePath: pipeline.sourceImagePath,
+      );
+    } catch (e) {
+      messenger.showSnackBar(
+        SnackBar(content: Text('Email open nahi ho saka: $e')),
+      );
+    }
   }
 
   @override
@@ -92,16 +132,21 @@ class _ConfirmationScreenState extends ConsumerState<ConfirmationScreen> {
           child: Column(
             children: [
               const SizedBox(height: 40),
-              const Icon(Icons.check_circle_rounded,
-                      color: AppColors.success, size: 100)
+              const Icon(
+                    Icons.check_circle_rounded,
+                    color: AppColors.success,
+                    size: 100,
+                  )
                   .animate()
                   .scale(duration: 600.ms, curve: Curves.easeOutBack)
                   .fadeIn(),
               const SizedBox(height: 24),
               Text(
                 "${draft?.actionLabel ?? 'Complaint'} File Ho Gayi!",
-                style: AppTextStyles.headline
-                    .copyWith(color: AppColors.primary, fontSize: 24),
+                style: AppTextStyles.headline.copyWith(
+                  color: AppColors.primary,
+                  fontSize: 24,
+                ),
                 textAlign: TextAlign.center,
               ).animate().fadeIn(delay: 300.ms),
               const SizedBox(height: 32),
@@ -110,7 +155,10 @@ class _ConfirmationScreenState extends ConsumerState<ConfirmationScreen> {
               _buildExecutionLog(authority, isCollective, cluster?.count),
               const SizedBox(height: 24),
               _buildCaseRefCard(
-                  rights, authority, draft?.estimatedResponseDays ?? 14),
+                rights,
+                authority,
+                draft?.estimatedResponseDays ?? 14,
+              ),
               const SizedBox(height: 24),
               _buildTimeline(draft),
               const SizedBox(height: 24),
@@ -126,7 +174,10 @@ class _ConfirmationScreenState extends ConsumerState<ConfirmationScreen> {
   }
 
   Widget _buildBeforeAfterCard(
-      double amountOwed, bool isCollective, int? clusterCount) {
+    double amountOwed,
+    bool isCollective,
+    int? clusterCount,
+  ) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(20),
@@ -144,8 +195,10 @@ class _ConfirmationScreenState extends ConsumerState<ConfirmationScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text("System State Change",
-              style: AppTextStyles.title.copyWith(fontSize: 16)),
+          Text(
+            "System State Change",
+            style: AppTextStyles.title.copyWith(fontSize: 16),
+          ),
           const SizedBox(height: 16),
           _StateRow(
             label: "BEFORE",
@@ -169,9 +222,12 @@ class _ConfirmationScreenState extends ConsumerState<ConfirmationScreen> {
   }
 
   Widget _buildExecutionLog(
-      String authority, bool isCollective, int? clusterCount) {
+    String authority,
+    bool isCollective,
+    int? clusterCount,
+  ) {
     final logs = <String>[
-      'POST mock://citizens-portal/complaints → 201 Created',
+      'Submission queued for $authority portal',
       'CASE_REF $_caseRef assigned',
       'SCHEDULE follow_up +7d, +14d, +30d',
       if (isCollective)
@@ -191,8 +247,11 @@ class _ConfirmationScreenState extends ConsumerState<ConfirmationScreen> {
         children: [
           Row(
             children: [
-              const Icon(Icons.terminal_rounded,
-                  color: AppColors.accent, size: 18),
+              const Icon(
+                Icons.terminal_rounded,
+                color: AppColors.accent,
+                size: 18,
+              ),
               const SizedBox(width: 8),
               Text(
                 "Action Execution Log",
@@ -222,14 +281,19 @@ class _ConfirmationScreenState extends ConsumerState<ConfirmationScreen> {
     ).animate().fadeIn(delay: 500.ms);
   }
 
-  Widget _buildCaseRefCard(dynamic rights, String authority, int responseDays) {
+  Widget _buildCaseRefCard(
+    RightsAnalysis? rights,
+    String authority,
+    int responseDays,
+  ) {
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border:
-            const Border(left: BorderSide(color: AppColors.primary, width: 6)),
+        border: const Border(
+          left: BorderSide(color: AppColors.primary, width: 6),
+        ),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.05),
@@ -270,11 +334,16 @@ class _ConfirmationScreenState extends ConsumerState<ConfirmationScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text("Follow-up Schedule",
-              style: AppTextStyles.title.copyWith(fontSize: 16)),
+          Text(
+            "Follow-up Schedule",
+            style: AppTextStyles.title.copyWith(fontSize: 16),
+          ),
           const SizedBox(height: 20),
           _TimelineItem(
-              day: "Day 0", task: "${draft?.actionLabel ?? 'Complaint'} Filed", isComplete: true),
+            day: "Day 0",
+            task: "${draft?.actionLabel ?? 'Complaint'} Filed",
+            isComplete: true,
+          ),
           const _TimelineItem(day: "Day 7", task: "Auto reminder scheduled"),
           const _TimelineItem(day: "Day 14", task: "Status check scheduled"),
           const _TimelineItem(day: "Day 30", task: "Escalation if no response"),
@@ -310,13 +379,19 @@ class _ConfirmationScreenState extends ConsumerState<ConfirmationScreen> {
     ).animate().fadeIn(delay: 900.ms).shake();
   }
 
-  Widget _buildActions(BuildContext context, dynamic rights, dynamic doc, ActionDraft? draft) {
-    final receipt = '''
+  Widget _buildActions(
+    BuildContext context,
+    RightsAnalysis? rights,
+    DocumentEntity? doc,
+    ActionDraft? draft,
+  ) {
+    final receipt =
+        '''
 DarkhwastAI — ${draft?.actionLabel ?? 'Complaint'} Receipt
 Case: $_caseRef
 Filed: $_today
 Amount claimed: Rs. ${rights?.amountOwed.toStringAsFixed(0) ?? '0'}
-Document: ${doc?.type.displayName ?? 'N/A'}
+Document: ${doc != null ? documentTypeDisplayName(doc.type) : 'N/A'}
 ''';
 
     return Column(
@@ -332,7 +407,8 @@ Document: ${doc?.type.displayName ?? 'N/A'}
               side: const BorderSide(color: AppColors.accent, width: 2),
               foregroundColor: AppColors.primary,
               shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12)),
+                borderRadius: BorderRadius.circular(12),
+              ),
             ),
           ),
         ),
@@ -341,19 +417,37 @@ Document: ${doc?.type.displayName ?? 'N/A'}
           width: double.infinity,
           height: 56,
           child: ElevatedButton.icon(
+            onPressed: () => _sendEmail(context),
+            icon: const Icon(Icons.mail_outline_rounded),
+            label: const Text("Email Karen (Gmail)"),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primary,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(height: 12),
+        SizedBox(
+          width: double.infinity,
+          height: 52,
+          child: OutlinedButton.icon(
             onPressed: () {
               Clipboard.setData(ClipboardData(text: receipt));
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(content: Text("Receipt copied to clipboard!")),
               );
             },
-            icon: const Icon(Icons.share_rounded),
-            label: const Text("Receipt Share Karen"),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primary,
-              foregroundColor: Colors.white,
+            icon: const Icon(Icons.copy_rounded),
+            label: const Text("Receipt Copy Karen"),
+            style: OutlinedButton.styleFrom(
+              side: const BorderSide(color: AppColors.primary, width: 1.5),
+              foregroundColor: AppColors.primary,
               shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12)),
+                borderRadius: BorderRadius.circular(12),
+              ),
             ),
           ),
         ),
@@ -368,7 +462,8 @@ Document: ${doc?.type.displayName ?? 'N/A'}
                   foregroundColor: AppColors.primary,
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12)),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                 ),
                 child: const Text("Case Track Karen"),
               ),
@@ -382,7 +477,8 @@ Document: ${doc?.type.displayName ?? 'N/A'}
                   foregroundColor: AppColors.primary,
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12)),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                 ),
                 child: const Text("Ghar Wapis (Home)"),
               ),
@@ -399,21 +495,32 @@ class _StateRow extends StatelessWidget {
   final String value;
   final Color color;
 
-  const _StateRow(
-      {required this.label, required this.value, required this.color});
+  const _StateRow({
+    required this.label,
+    required this.value,
+    required this.color,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label,
-            style: AppTextStyles.caption
-                .copyWith(color: color, fontWeight: FontWeight.bold)),
+        Text(
+          label,
+          style: AppTextStyles.caption.copyWith(
+            color: color,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
         const SizedBox(height: 4),
-        Text(value,
-            style: AppTextStyles.body
-                .copyWith(fontSize: 13, color: AppColors.textPrimary)),
+        Text(
+          value,
+          style: AppTextStyles.body.copyWith(
+            fontSize: 13,
+            color: AppColors.textPrimary,
+          ),
+        ),
       ],
     );
   }
@@ -437,9 +544,10 @@ class _DataRow extends StatelessWidget {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(label,
-            style:
-                AppTextStyles.caption.copyWith(color: AppColors.textSecondary)),
+        Text(
+          label,
+          style: AppTextStyles.caption.copyWith(color: AppColors.textSecondary),
+        ),
         Flexible(
           child: Text(
             value,
@@ -460,8 +568,11 @@ class _TimelineItem extends StatelessWidget {
   final String task;
   final bool isComplete;
 
-  const _TimelineItem(
-      {required this.day, required this.task, this.isComplete = false});
+  const _TimelineItem({
+    required this.day,
+    required this.task,
+    this.isComplete = false,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -480,16 +591,23 @@ class _TimelineItem extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 16),
-          Text(day,
-              style: AppTextStyles.caption.copyWith(
-                  fontWeight: FontWeight.bold, color: AppColors.primary)),
+          Text(
+            day,
+            style: AppTextStyles.caption.copyWith(
+              fontWeight: FontWeight.bold,
+              color: AppColors.primary,
+            ),
+          ),
           const SizedBox(width: 12),
           Expanded(
-              child:
-                  Text(task, style: AppTextStyles.body.copyWith(fontSize: 14))),
+            child: Text(task, style: AppTextStyles.body.copyWith(fontSize: 14)),
+          ),
           if (isComplete)
-            const Icon(Icons.check_circle_rounded,
-                color: AppColors.success, size: 16),
+            const Icon(
+              Icons.check_circle_rounded,
+              color: AppColors.success,
+              size: 16,
+            ),
         ],
       ),
     );

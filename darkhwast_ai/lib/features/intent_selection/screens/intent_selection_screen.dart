@@ -112,7 +112,8 @@ class _IntentSelectionScreenState extends ConsumerState<IntentSelectionScreen> {
                           hintText:
                               "Batayein aap kya chahte hain...\ne.g. 'Mujhe yeh bill kam karwana hai'",
                           hintStyle: AppTextStyles.body.copyWith(
-                            color: AppColors.textSecondary.withValues(alpha: 0.5),
+                            color:
+                                AppColors.textSecondary.withValues(alpha: 0.5),
                             fontSize: 14,
                           ),
                           border: InputBorder.none,
@@ -162,6 +163,8 @@ class _IntentSelectionScreenState extends ConsumerState<IntentSelectionScreen> {
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
                         ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
                   ),
@@ -195,10 +198,7 @@ class _IntentSelectionScreenState extends ConsumerState<IntentSelectionScreen> {
 
   Widget _buildDocSummary(DocumentEntity doc) {
     final amountStr = doc.amounts.isNotEmpty
-        ? doc.amounts
-            .map((a) => "Rs. ${a['amount']}")
-            .take(2)
-            .join(', ')
+        ? doc.amounts.map((a) => "Rs. ${a['amount']}").take(2).join(', ')
         : null;
 
     return Container(
@@ -234,6 +234,8 @@ class _IntentSelectionScreenState extends ConsumerState<IntentSelectionScreen> {
                     fontSize: 14,
                     color: AppColors.primary,
                   ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
                 ),
                 if (amountStr != null)
                   Text(

@@ -42,10 +42,7 @@ class _NavigationShellState extends State<NavigationShell> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: IndexedStack(
-        index: _selectedIndex,
-        children: _screens,
-      ),
+      body: IndexedStack(index: _selectedIndex, children: _screens),
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
           boxShadow: [
@@ -68,14 +65,18 @@ class _NavigationShellState extends State<NavigationShell> {
           items: [
             _buildNavItem(Icons.home_rounded, "Home", 0),
             _buildNavItem(Icons.folder_rounded, "Cases", 1),
-            _buildNavItem(Icons.info_rounded, "About", 2),
+            _buildNavItem(Icons.settings_rounded, "Settings", 2),
           ],
         ),
       ),
     );
   }
 
-  BottomNavigationBarItem _buildNavItem(IconData icon, String label, int index) {
+  BottomNavigationBarItem _buildNavItem(
+    IconData icon,
+    String label,
+    int index,
+  ) {
     final isActive = _selectedIndex == index;
     return BottomNavigationBarItem(
       icon: Column(

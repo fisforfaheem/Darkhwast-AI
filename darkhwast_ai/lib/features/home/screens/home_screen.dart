@@ -3,8 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/constants/colors.dart';
 import '../../../core/constants/text_styles.dart';
+import '../../../core/providers/ai_mode_provider.dart';
 import '../../../core/providers/case_providers.dart';
 import '../../../shared/widgets/case_card.dart';
+import '../../../shared/widgets/demo_mode_badge.dart';
 import '../../scanner/screens/scanner_screen.dart';
 
 class HomeScreen extends ConsumerWidget {
@@ -13,6 +15,7 @@ class HomeScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final cases = ref.watch(caseListProvider);
+    final isDemo = ref.watch(isCuratedDemoProvider);
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -25,9 +28,11 @@ class HomeScreen extends ConsumerWidget {
               .copyWith(color: AppColors.primary, fontWeight: FontWeight.bold),
         ),
         actions: [
+          if (isDemo) const DemoModeBadge(),
           IconButton(
-            onPressed: () => context.push('/about'),
-            icon: const Icon(Icons.info_outline_rounded, color: AppColors.primary),
+            onPressed: () => context.go('/about'),
+            icon: const Icon(Icons.info_outline_rounded,
+                color: AppColors.primary),
             tooltip: "Settings & About",
           ),
         ],
@@ -44,7 +49,62 @@ class HomeScreen extends ConsumerWidget {
                     AppTextStyles.body.copyWith(color: AppColors.textSecondary),
               ),
             ),
-            const SizedBox(height: 40),
+            if (isDemo) ...[
+              const SizedBox(height: 20),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                child: Material(
+                  color: AppColors.accent.withValues(alpha: 0.2),
+                  borderRadius: BorderRadius.circular(16),
+                  child: InkWell(
+                    onTap: () => context.push('/demo-picker'),
+                    borderRadius: BorderRadius.circular(16),
+                    child: Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(20),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(
+                          color: AppColors.accent.withValues(alpha: 0.6),
+                          width: 1.5,
+                        ),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              const Icon(Icons.auto_awesome_rounded,
+                                  color: AppColors.primary),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: Text(
+                                  'Curated demo chunain',
+                                  style: AppTextStyles.title.copyWith(
+                                    color: AppColors.primary,
+                                    fontSize: 18,
+                                  ),
+                                ),
+                              ),
+                              const Icon(Icons.arrow_forward_rounded,
+                                  color: AppColors.primary),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            'IESCO bill, FBR ghost deadline, ya BISP — poora 5-agent show.',
+                            style: AppTextStyles.caption.copyWith(
+                              color: AppColors.textSecondary,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+            const SizedBox(height: 32),
             _buildHeroScanButton(context),
             const SizedBox(height: 32),
             Padding(
@@ -161,9 +221,16 @@ class HomeScreen extends ConsumerWidget {
             children: [
               Icon(icon, color: AppColors.primary, size: 24),
               const SizedBox(width: 8),
-              Text(label,
+              Flexible(
+                child: Text(
+                  label,
                   style: AppTextStyles.body.copyWith(
-                      color: AppColors.primary, fontWeight: FontWeight.bold)),
+                    color: AppColors.primary,
+                    fontWeight: FontWeight.bold,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
             ],
           ),
         ),

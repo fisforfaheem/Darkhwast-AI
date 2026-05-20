@@ -75,12 +75,16 @@ class _CaseCardState extends State<CaseCard> {
                           Text(
                             widget.caseData.document.authority,
                             style: AppTextStyles.title.copyWith(fontSize: 16),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
                           Text(
                             widget.caseData.caseReference,
                             style: AppTextStyles.caption.copyWith(
                               fontWeight: FontWeight.w600,
                             ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
                         ],
                       ),
@@ -90,8 +94,10 @@ class _CaseCardState extends State<CaseCard> {
                       children: [
                         _buildStatusChip(widget.caseData.status),
                         const SizedBox(height: 4),
-                        if (widget.caseData.userIntent != UserIntent.autoDetect &&
-                            widget.caseData.userIntent != UserIntent.fileComplaint)
+                        if (widget.caseData.userIntent !=
+                                UserIntent.autoDetect &&
+                            widget.caseData.userIntent !=
+                                UserIntent.fileComplaint)
                           Text(
                             widget.caseData.actionDraft.actionLabel,
                             style: AppTextStyles.caption.copyWith(
@@ -219,11 +225,13 @@ class _CaseCardState extends State<CaseCard> {
     if (t.contains('property')) return Icons.home_rounded;
     if (t.contains('pension')) return Icons.elderly_rounded;
     if (t.contains('nadra')) return Icons.credit_card_rounded;
-    if (t.contains('challan') || t.contains('police')) return Icons.local_police_rounded;
+    if (t.contains('challan') || t.contains('police'))
+      return Icons.local_police_rounded;
     if (t.contains('school') || t.contains('fee')) return Icons.school_rounded;
     if (t.contains('municipal')) return Icons.location_city_rounded;
     if (t.contains('legal') || t.contains('court')) return Icons.gavel_rounded;
-    if (t.contains('government') || t.contains('form')) return Icons.article_rounded;
+    if (t.contains('government') || t.contains('form'))
+      return Icons.article_rounded;
     return Icons.insert_drive_file_rounded;
   }
 }

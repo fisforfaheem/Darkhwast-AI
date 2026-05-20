@@ -48,22 +48,20 @@ On device:
 4. Watch **Live Agent Trace** → HAQ Dashboard → File complaint → Confirmation
 5. **Cases** tab → your filed case appears
 
-## Live AI (Gemini 2.5 / 3.1)
+## Live AI (Gemini 1.5 Flash)
 
 1. Copy `.env.example` → `.env` (or edit the existing `.env`)
 2. Set your key:
 
 ```env
 GEMINI_API_KEY=your_key_from_aistudio_google_com
-GEMINI_MODEL=gemini-2.5-pro
+GEMINI_MODEL=gemini-1.5-flash
 USE_MOCK=false
 ```
 
 | Model | When to use |
 |-------|-------------|
-| `gemini-2.5-pro` | **Default** — stable, strong reasoning + structured JSON |
-| `gemini-3.1-pro-preview` | **Latest** — best for multi-step agent pipelines (preview) |
-| `gemini-2.5-flash` | Faster scans, lower cost |
+| `gemini-1.5-flash` | **Default** — stable, fast, low cost |
 
 3. Run the app:
 
@@ -88,7 +86,7 @@ Turn **Demo Mode ON** (tap logo 5×) only for offline judge demos without API ca
 - **Firebase Anonymous Auth** — required for Firestore writes
 - **SharedPreferences** — local case fallback (always works offline)
 
-See [`docs/agent_architecture.md`](docs/agent_architecture.md) and [`docs/challenge1_mapping.md`](docs/challenge1_mapping.md).
+See [`docs/agent_architecture.md`](docs/agent_architecture.md), [`docs/challenge1_mapping.md`](docs/challenge1_mapping.md), and [`docs/complaint_filing_workflow.md`](docs/complaint_filing_workflow.md) (full filing path: agents → draft → simulated submit → follow-ups).
 
 ## Agent trace (judges — Antigravity format)
 

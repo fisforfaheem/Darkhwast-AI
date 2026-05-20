@@ -18,7 +18,7 @@
     ],
     "deadlines": [
       {
-        "label": "Response Deadline",
+        "label": "Response Deadline (footnote iii)",
         "date": "2026-05-19",
         "daysRemaining": 4,
         "isHidden": true
@@ -27,7 +27,7 @@
     "keyFacts": [
       "FBR Income Tax Notice detected",
       "Section 122 Assessment",
-      "Deadline buried in footnote"
+      "Ghost deadline: 4 days buried in footnote"
     ]
   },
   "rightsAnalysis": {
@@ -38,14 +38,32 @@
     "actualCharged": 125000,
     "amountOwed": 75000,
     "haqScore": 55,
-    "haqReasoning": "FBR ka assessment notice technical ghaltiyon par mabni hai. Aap ke pas 30 din ka waqt hota hai jawab dene ke liye.",
+    "haqReasoning": "FBR ka assessment notice technical ghaltiyon par mabni hai. Chhupi hui deadline — fauran jawab den.",
     "confidenceLevel": "MEDIUM"
   },
   "complaintDraft": {
-    "urduDraft": "Bakhidmat Commissioner (Appeals), FBR.\n\nJanab,\n\nMujhe FBR ki janib se Section 122 ka notice mila hai. Is assessment mein meri aamdani ghalat calculate ki gayi hai. Main is demand ko challenge karta hoon.\n\nShukriya.",
-    "englishDraft": "To the Commissioner (Appeals), FBR.\n\nSubject: Response to Assessment Notice u/s 122.\n\nI am responding to the tax assessment notice (Ref: NTN-7654321). The income calculation in the assessment is incorrect. I request a stay on this demand and a personal hearing.\n\nRegards.",
-    "subject": "FBR Tax Notice Dispute",
+    "urduDraft": "بخدمت کمشنر (اپیلز)، FBR۔\n\nجناب،\n\nمجھے FBR کی جانب سے Section 122 کا نوٹس ملا ہے (NTN-7654321)۔ تشخیص میں میری آمدنی غلط حساب کی گئی ہے — ڈیمانڈ Rs. 125,000 ہے جبکہ revised position Rs. 50,000 ہونی چاہیے۔ Footnote (iii) کی 4 دن کی ڈیڈ لائن کے تحت یہ جواب بروقت فائل ہو رہا ہے۔ میں hearing اور stay کی درخواست کرتا/کرتی ہوں۔\n\nشکریہ۔",
+    "englishDraft": "To the Commissioner (Appeals), FBR.\n\nSubject: Response to Assessment Notice u/s 122 — NTN-7654321.\n\nI am responding within the statutory window referenced in footnote (iii). The assessed income is incorrect; I dispute the demand of Rs. 125,000 and request a stay and personal hearing. Supporting documents are available on request.\n\nRegards.",
+    "subject": "FBR Tax Notice Dispute — Section 122",
     "submissionAuthority": "FBR Facilitation Center",
+    "submissionPortal": "iris.fbr.gov.pk",
     "estimatedResponseDays": 7
+  },
+  "agentMessages": {
+    "docIntel": "FBR Section 122 notice parsed — Rs. 125,000 demand, NTN verified.",
+    "urgency": "GHOST DEADLINE: 4 days remaining — hidden in footnote (iii). URGENT interrupt.",
+    "rights": "Assessment error likely — HAQ 55. Rs. 75,000 dispute identified.",
+    "drafter": "Appeal response drafted — Urdu + English for FBR portal.",
+    "pattern": "Individual tax case — no collective cluster for this violation type."
+  },
+  "draftsByIntent": {
+    "explainDocument": {
+      "urduDraft": "یہ FBR کا Section 122 ٹیکس نوٹس ہے۔ حکومت کہہ رہی ہے آپ Rs. 125,000 دیں۔ نوٹس کی footnote میں 4 دن کی چھپی ہوئی ڈیڈ لائن ہے — یہ بہت فوری ہے۔",
+      "englishDraft": "This FBR notice under Section 122 demands Rs. 125,000. A hidden 4-day response deadline appears in footnote (iii) — treat as urgent.",
+      "subject": "FBR Notice Plain Explanation",
+      "submissionAuthority": "FBR",
+      "submissionPortal": "iris.fbr.gov.pk",
+      "estimatedResponseDays": 7
+    }
   }
 }

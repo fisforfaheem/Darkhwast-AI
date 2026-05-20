@@ -130,6 +130,12 @@ extension DocumentTypeKeys on DocumentType {
   }
 }
 
+/// Safe label for UI — works even when the receiver is [dynamic].
+String documentTypeDisplayName(dynamic type) {
+  if (type is DocumentType) return type.displayName;
+  return parseDocumentType(type).displayName;
+}
+
 DocumentType parseDocumentType(dynamic raw) {
   final normalized =
       raw?.toString().trim().toUpperCase().replaceAll(' ', '_') ?? '';
@@ -202,8 +208,9 @@ class DocumentEntity {
       dates: List<Map<String, dynamic>>.from(json['dates'] ?? []),
       deadlines: List<Map<String, dynamic>>.from(json['deadlines'] ?? []),
       keyFacts: List<String>.from(json['keyFacts'] ?? []),
-      rawAmountsBilled:
-          Map<String, dynamic>.from(json['rawAmountsBilled'] ?? {}),
+      rawAmountsBilled: Map<String, dynamic>.from(
+        json['rawAmountsBilled'] ?? {},
+      ),
     );
   }
 

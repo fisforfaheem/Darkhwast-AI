@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../../../core/constants/colors.dart';
 import '../../../core/constants/text_styles.dart';
+import '../../../core/providers/ai_mode_provider.dart';
 
 class SplashScreen extends ConsumerStatefulWidget {
   const SplashScreen({super.key});
@@ -24,16 +25,15 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
     // Artificial delay for splash effect
     await Future.delayed(const Duration(milliseconds: 2500));
     
-    final prefs = await SharedPreferences.getInstance();
-    final bool showOnboarding = prefs.getBool('showOnboarding') ?? true;
-
     if (!mounted) return;
 
-    if (showOnboarding) {
-      context.go('/onboarding');
-    } else {
-      context.go('/home');
-    }
+    // Reset onboarding and setup-completed keys for demo purposes so that
+    // onboarding and setup flow are shown on every launch.
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('showOnboarding', true);
+    await prefs.setBool('ai_setup_completed', false);
+
+    context.go('/onboarding');
   }
 
   @override

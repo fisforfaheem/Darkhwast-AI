@@ -18,11 +18,22 @@ class GeminiService {
   final String model;
   final bool useMock;
 
-  GeminiService({
-    this.apiKey,
-    required this.model,
-    this.useMock = false,
-  });
+  GeminiService({this.apiKey, required this.model, this.useMock = false});
+
+  static Future<bool> validateApiKey(String key) async {
+    try {
+      final modelInstance = GenerativeModel(
+        model: 'gemini-1.5-flash',
+        apiKey: key.trim(),
+      );
+      final response = await modelInstance
+          .generateContent([Content.text('test')])
+          .timeout(const Duration(seconds: 5));
+      return response.text != null;
+    } catch (e) {
+      return false;
+    }
+  }
 
   GenerativeModel? get _model => apiKey != null && apiKey!.isNotEmpty
       ? GenerativeModel(model: model, apiKey: apiKey!)
@@ -39,7 +50,8 @@ class GeminiService {
     }
 
     try {
-      final prompt = '''
+      final prompt =
+          '''
       You are a document analysis agent for Pakistani government documents.
       You can analyze ANY kind of Pakistani document including but not limited to:
       electricity bills, gas bills, water bills, property tax notices, 
@@ -70,7 +82,9 @@ class GeminiService {
   }
 
   Future<RightsAnalysis> analyzeRights(
-      DocumentEntity doc, Map<String, dynamic> law) async {
+    DocumentEntity doc,
+    Map<String, dynamic> law,
+  ) async {
     if (useMock) {
       return _mockRights();
     }
@@ -81,7 +95,8 @@ class GeminiService {
     }
 
     try {
-      final prompt = '''
+      final prompt =
+          '''
       You are Pakistan's citizen rights legal AI. You know NEPRA, OGRA, BISP, FBR, NADRA,
       WASA, municipal, provincial and federal regulations precisely.
       Given this document analysis: ${jsonEncode(doc.toJson())}
@@ -131,8 +146,7 @@ class GeminiService {
       final jsonStr = _extractJson(response.text ?? '{}');
       final json = jsonDecode(jsonStr) as Map<String, dynamic>;
       json['actionType'] = intentSelection.intent.name;
-      json['actionSummary'] =
-          json['actionSummary'] ?? 'Action draft generated';
+      json['actionSummary'] = json['actionSummary'] ?? 'Action draft generated';
       return ActionDraft.fromJson(json);
     } catch (e) {
       throw GeminiException("Action drafting failed: ${e.toString()}");
@@ -141,12 +155,10 @@ class GeminiService {
 
   /// Backward-compatible complaint-only draft.
   Future<ActionDraft> draftComplaint(
-      RightsAnalysis analysis, DocumentEntity doc) async {
-    return draftAction(
-      analysis,
-      doc,
-      UserIntentSelection.auto(),
-    );
+    RightsAnalysis analysis,
+    DocumentEntity doc,
+  ) async {
+    return draftAction(analysis, doc, UserIntentSelection.auto());
   }
 
   String _buildActionPrompt(
@@ -157,7 +169,8 @@ class GeminiService {
     final intent = intentSelection.intent;
     final customText = intentSelection.customText ?? '';
 
-    final commonContext = '''
+    final commonContext =
+        '''
     Document: ${doc.type.displayName}
     Authority: ${doc.authority}
     Violation: ${analysis.violationType}
@@ -172,7 +185,7 @@ class GeminiService {
         actionInstruction = '''
         Explain what this document says in simple, plain language that a common Pakistani citizen can understand.
         Include: what is being charged, why, what dates matter, and what the citizen should know.
-        The "urduDraft" should be the explanation in Urdu.
+        The "urduDraft" should be the explanation in Urdu script (Perso-Arabic), NOT Roman Urdu.
         The "englishDraft" should be the explanation in English.
         The "subject" should summarize the document type and key finding.
         Set "documentExplanation" to a concise 2-3 line plain-language summary.
@@ -207,7 +220,8 @@ class GeminiService {
         ''';
         break;
       case UserIntent.customAction:
-        actionInstruction = '''
+        actionInstruction =
+            '''
         The citizen wants the following action: "$customText"
         Based on the document analysis, draft the appropriate formal letter/application 
         that fulfills what the citizen is asking for.
@@ -233,7 +247,7 @@ class GeminiService {
     
     Return ONLY valid JSON:
     {
-      "urduDraft": "Full draft in formal Urdu (Nastaliq-compatible)",
+      "urduDraft": "Full draft in formal Urdu script (Perso-Arabic / Nastaliq-compatible). NEVER use Roman Urdu or Latin transliteration.",
       "englishDraft": "Full draft in formal English",
       "subject": "Subject line in English",
       "submissionAuthority": "Authority name",
@@ -244,26 +258,31 @@ class GeminiService {
     }
 
     Do NOT use placeholder brackets in the output — use actual values.
+    For urduDraft: write ONLY in Urdu script (e.g. "بخدمت جناب،" / "محترم جناب،"). 
+    NEVER use Roman Urdu transliteration (e.g. "Bakhidmat Janab" / "Main aap ki tawajjo").
     ''';
   }
 
   Future<DocumentEntity> _mockDocument() async {
-    final response = await rootBundle
-        .loadString('assets/mock_responses/electricity_bill_response.json');
+    final response = await rootBundle.loadString(
+      'assets/mock_responses/electricity_bill_response.json',
+    );
     final data = jsonDecode(response);
     return DocumentEntity.fromJson(data['docIntel']);
   }
 
   Future<RightsAnalysis> _mockRights() async {
-    final response = await rootBundle
-        .loadString('assets/mock_responses/electricity_bill_response.json');
+    final response = await rootBundle.loadString(
+      'assets/mock_responses/electricity_bill_response.json',
+    );
     final data = jsonDecode(response);
     return RightsAnalysis.fromJson(data['rightsAnalysis']);
   }
 
   Future<ActionDraft> _mockDraft() async {
-    final response = await rootBundle
-        .loadString('assets/mock_responses/electricity_bill_response.json');
+    final response = await rootBundle.loadString(
+      'assets/mock_responses/electricity_bill_response.json',
+    );
     final data = jsonDecode(response);
     return ActionDraft.fromJson(data['complaintDraft']);
   }

@@ -1,18 +1,29 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../config/app_env.dart';
+import 'ai_mode_provider.dart';
+import 'shared_prefs_provider.dart';
 
 class DemoModeNotifier extends StateNotifier<bool> {
   static const _key = 'demo_mode_enabled';
   final SharedPreferences prefs;
 
-  /// Default: Demo OFF when live Gemini is configured; ON otherwise (judge fallback).
-  DemoModeNotifier(this.prefs)
-      : super(prefs.getBool(_key) ?? !AppEnv.liveAiReady);
+  /// Synced with [AiMode]: curated demo ON by default after setup.
+  DemoModeNotifier(this.prefs) : super(prefs.getBool(_key) ?? true);
+
+  static bool fromPrefs(SharedPreferences prefs) {
+    final mode = prefs.getString('ai_mode');
+    if (mode == AiMode.userGeminiKey.name) return false;
+    return prefs.getBool(_key) ?? true;
+  }
 
   Future<void> toggle() async {
     state = !state;
     await prefs.setBool(_key, state);
+  }
+
+  Future<void> setEnabled(bool enabled) async {
+    state = enabled;
+    await prefs.setBool(_key, enabled);
   }
 }
 
@@ -29,10 +40,6 @@ class DemoScenarioNotifier extends StateNotifier<String> {
     await prefs.setString(_key, scenario);
   }
 }
-
-final sharedPrefsProvider = Provider<SharedPreferences>((ref) {
-  throw UnimplementedError(); // Should be overridden in main.dart
-});
 
 final demoModeProvider = StateNotifierProvider<DemoModeNotifier, bool>((ref) {
   final prefs = ref.watch(sharedPrefsProvider);
